@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WASTAMA EILAND</title>
+<style>
+body { margin:0; overflow:hidden; background:black; font-family:Arial; }
+#menu {
+ position:absolute;
+ top:40%;
+ left:50%;
+ transform:translate(-50%,-50%);
+ text-align:center;
+}
+button {
+ padding:12px;
+ margin:6px;
+ font-size:16px;
+ cursor:pointer;
+}
+#hud {
+ position:absolute;
+ top:10px;
+ left:10px;
+ color:white;
+ display:none;
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+ <h1 style="color:white;">WASTAMA EILAND</h1>
+ <button onclick="startGame('frost')">Start als Frost</button>
+ <button onclick="startGame('blaze')">Start als Blaze</button>
+ <button onclick="startGame('volt')">Start als Volt</button>
+</div>
+
+<div id="hud">
+ HP: <span id="hp">100</span> | Ability: Q
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+
+let scene, camera, renderer;
+let player, enemies=[];
+let hp=100;
+let abilityReady=true;
+
+function startGame(type){
+
+ document.getElementById("menu").style.display="none";
+ document.getElementById("hud").style.display="block";
+
+ scene=new THREE.Scene();
+ camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+ renderer=new THREE.WebGLRenderer({antialias:true});
+ renderer.setSize(window.innerWidth,window.innerHeight);
+ document.body.appendChild(renderer.domElement);
+
+ camera.position.set(0,5,10);
+
+ let light=new THREE.PointLight(0xffffff,1.2);
+ light.position.set(10,10,10);
+ scene.add(light);
+ scene.add(new THREE.AmbientLight(0x404040,2));
+
+ // Map (Wastama Eiland)
+ let ground=new THREE.Mesh(
+  new THREE.PlaneGeometry(200,200),
+  new THREE.MeshPhongMaterial({color:0x228B22})
+ );
+ ground.rotation.x=-Math.PI/2;
+ scene.add(ground);
+
+ // Random gebouwen
+ for(let i=0;i<30;i++){
+   let building=new THREE.Mesh(
+    new THREE.BoxGeometry(3,Math.random()*8+2,3),
+    new THREE.MeshPhongMaterial({color:0x555555})
+   );
+   building.position.set(
+     (Math.random()-0.5)*150,
+     building.geometry.parameters.height/2,
+     (Math.random()-0.5)*150
+   );
+   scene.add(building);
+ }
+
+ // Player
+ let color=0x88ccff;
+ if(type==="blaze") color=0xff3300;
+ if(type==="volt") color=0x2222ff;
+
+ player=new THREE.Mesh(
+  new THREE.BoxGeometry(2,3,1),
+  new THREE.MeshPhongMaterial({color:color})
+ );
+ player.position.y=1.5;
+ scene.add(player);
+
+ player.userData.type=type;
+
+ // Bots
+ for(let i=0;i<5;i++){
+   let bot=new THREE.Mesh(
+    new THREE.BoxGeometry(2,3,1),
+    new THREE.MeshPhongMaterial({color:0xffffff})
+   );
+   bot.position.set((Math.random()-0.5)*100,1.5,(Math.random()-0.5)*100);
+   bot.userData.hp=50;
+   enemies.push(bot);
+   scene.add(bot);
+ }
+
+ document.addEventListener("keydown",move);
+ document.addEventListener("keydown",ability);
+ document.addEventListener("click",shoot);
+
+ animate();
+}
+
+function move(e){
+ if(e.key==="w") player.position.z-=1;
+ if(e.key==="s") player.position.z+=1;
+ if(e.key==="a") player.position.x-=1;
+ if(e.key==="d") player.position.x+=1;
+}
+
+function ability(e){
+ if(e.key==="q" && abilityReady){
+  abilityReady=false;
+
+  if(player.userData.type==="frost"){
+   player.scale.set(1.5,1.5,1.5);
+   setTimeout(()=>player.scale.set(1,1,1),2000);
+  }
+
+  if(player.userData.type==="blaze"){
+   player.position.z-=5;
+  }
+
+  if(player.userData.type==="volt"){
+   player.position.x+=5;
+  }
+
+  setTimeout(()=>abilityReady=true,5000);
+ }
+}
+
+function shoot(){
+ let raycaster=new THREE.Raycaster();
+ raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
+ let hits=raycaster.intersectObjects(enemies);
+ if(hits.length>0){
+   let target=hits[0].object;
+   target.userData.hp-=25;
+   if(target.userData.hp<=0){
+     scene.remove(target);
+     enemies=enemies.filter(e=>e!==target);
+     if(enemies.length===0){
+       alert("YOU WIN!");
+       location.reload();
+     }
+   }
+ }
+}
+
+function animate(){
+ requestAnimationFrame(animate);
+
+ enemies.forEach(bot=>{
+  bot.position.x+= (Math.random()-0.5)*0.5;
+  bot.position.z+= (Math.random()-0.5)*0.5;
+
+  if(bot.position.distanceTo(player.position)<3){
+    hp-=0.2;
+    document.getElementById("hp").innerText=Math.floor(hp);
+    if(hp<=0){
+      alert("GAME OVER");
+      location.reload();
+    }
+  }
+ });
+
+ camera.position.x=player.position.x;
+ camera.position.z=player.position.z+10;
+ camera.lookAt(player.position);
+
+ renderer.render(scene,camera);
+}
+
+</script>
+</body>
+</html>
