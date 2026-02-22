@@ -47,6 +47,9 @@ let scene, camera, renderer;
 let player, enemies=[];
 let hp=100;
 let abilityReady=true;
+ let keys = {};
+let yaw = 0;
+let pitch = 0;
  let stormRadius = 200;
 
 function startGame(type){
@@ -283,12 +286,7 @@ scene.add(player);
  animate();
 }
 
-function move(e){
- if(e.key==="w") player.position.z-=1;
- if(e.key==="s") player.position.z+=1;
- if(e.key==="a") player.position.x-=1;
- if(e.key==="d") player.position.x+=1;
-}
+
 
 function ability(e){
  if(e.key==="q" && abilityReady){
