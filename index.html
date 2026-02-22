@@ -1,3 +1,4 @@
+let stormRadius = 200;
 <!DOCTYPE html>
 <html>
 <head>
@@ -128,6 +129,29 @@ for(let i=0;i<20;i++){
   leaves.position.set(trunk.position.x,8,trunk.position.z);
   scene.add(leaves);
 }
+ // ===== LAVA ZONE =====
+let lava = new THREE.Mesh(
+  new THREE.CircleGeometry(40,32),
+  new THREE.MeshPhongMaterial({color:0xff3300, emissive:0xff0000})
+);
+lava.rotation.x = -Math.PI/2;
+lava.position.set(50,0.3,50);
+scene.add(lava);
+ // ===== IJS ZONE =====
+let ice = new THREE.Mesh(
+  new THREE.CircleGeometry(40,32),
+  new THREE.MeshPhongMaterial({color:0x88ccff})
+);
+ice.rotation.x = -Math.PI/2;
+ice.position.set(-50,0.3,-50);
+scene.add(ice);
+ let stormCircle = new THREE.Mesh(
+  new THREE.RingGeometry(stormRadius-2, stormRadius, 64),
+  new THREE.MeshBasicMaterial({color:0x800080, side:THREE.DoubleSide})
+);
+stormCircle.rotation.x = -Math.PI/2;
+stormCircle.position.y = 0.5;
+scene.add(stormCircle);
 
 // Gebouwen
 for(let i=0;i<15;i++){
