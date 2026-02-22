@@ -282,6 +282,23 @@ scene.add(player);
  document.addEventListener("keydown",move);
  document.addEventListener("keydown",ability);
  document.addEventListener("click",shoot);
+ // Toetsen bijhouden
+document.addEventListener("keydown", (e)=> keys[e.key]=true);
+document.addEventListener("keyup", (e)=> keys[e.key]=false);
+
+// Muis beweging
+document.addEventListener("mousemove", (e)=>{
+  if(document.pointerLockElement === document.body){
+    yaw -= e.movementX * 0.002;
+    pitch -= e.movementY * 0.002;
+    pitch = Math.max(-1.5, Math.min(1.5, pitch));
+  }
+});
+
+// Klik om muis vast te zetten
+document.body.addEventListener("click", ()=>{
+  document.body.requestPointerLock();
+});
 
  animate();
 }
@@ -344,9 +361,34 @@ function animate(){
   }
  });
 
- camera.position.x=player.position.x;
- camera.position.z=player.position.z+10;
- camera.lookAt(player.position);
+// Beweging met pijltjes
+let speed = 0.5;
+
+if(keys["ArrowUp"]) {
+  player.position.x -= Math.sin(yaw) * speed;
+  player.position.z -= Math.cos(yaw) * speed;
+}
+if(keys["ArrowDown"]) {
+  player.position.x += Math.sin(yaw) * speed;
+  player.position.z += Math.cos(yaw) * speed;
+}
+if(keys["ArrowLeft"]) {
+  player.position.x -= Math.cos(yaw) * speed;
+  player.position.z += Math.sin(yaw) * speed;
+}
+if(keys["ArrowRight"]) {
+  player.position.x += Math.cos(yaw) * speed;
+  player.position.z -= Math.sin(yaw) * speed;
+}
+
+// Camera volgen + rondkijken
+camera.position.x = player.position.x;
+camera.position.y = player.position.y + 5;
+camera.position.z = player.position.z;
+
+camera.rotation.order = "YXZ";
+camera.rotation.y = yaw;
+camera.rotation.x = pitch;
 
  renderer.render(scene,camera);
 }
