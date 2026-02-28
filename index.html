@@ -2,15 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA EILAND</title>
+<title>WASTAMA EILAND ULTRA V3</title>
 <style>
 body { margin:0; overflow:hidden; background:black; font-family:Arial; }
-#menu {
+#menu, #shopMenu, #gameOver {
  position:absolute;
  top:40%;
  left:50%;
  transform:translate(-50%,-50%);
  text-align:center;
+ color:white;
 }
 button {
  padding:12px;
@@ -25,372 +26,301 @@ button {
  color:white;
  display:none;
 }
+#shopBtn{
+ position:absolute;
+ top:10px;
+ right:10px;
+ display:none;
+}
 </style>
 </head>
 <body>
 
 <div id="menu">
- <h1 style="color:white;">WASTAMA EILAND</h1>
+<h1>WASTAMA EILAND</h1>
 <button onclick="startGame('frost')">Start als ijs mannetje</button>
 <button onclick="startGame('volt')">Start als bliksem mannetje</button>
 <button onclick="startGame('blaze')">Start als vuurmannetje</button>
+<p id="gamesPlayedText"></p>
+</div>
+
+<button id="shopBtn" onclick="openShop()">SHOP</button>
+
+<div id="shopMenu" style="display:none;">
+<h2>SHOP</h2>
+<p>Meer upgrades komen later...</p>
+<button onclick="closeShop()">Sluiten</button>
+</div>
+
+<div id="gameOver" style="display:none;">
+<h1 id="gameOverText"></h1>
+<button onclick="restartGame()">Opnieuw spelen</button>
 </div>
 
 <div id="hud">
- HP: <span id="hp">100</span> | Ability: Q
+HP: <span id="hp">100</span>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 
-let scene, camera, renderer;
-let player, enemies=[];
+let scene,camera,renderer;
+let player,enemies=[];
+let buildings=[];
+let keys={};
+let yaw=0,pitch=0;
 let hp=100;
-let abilityReady=true;
- let keys = {};
-let yaw = 0;
-let pitch = 0;
- let stormRadius = 200;
- let thirdPerson = true;
+let velocityY=0;
+let onGround=true;
+let lavaZone;
+let gameCount=parseInt(localStorage.getItem("gamesPlayed"))||0;
+
+document.getElementById("gamesPlayedText").innerText =
+"Games gespeeld: " + gameCount;
+
+if(gameCount>=10){
+ document.getElementById("shopBtn").style.display="block";
+}
 
 function startGame(type){
 
- document.getElementById("menu").style.display="none";
- document.getElementById("hud").style.display="block";
+gameCount++;
+localStorage.setItem("gamesPlayed",gameCount);
 
- scene=new THREE.Scene();
- camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
- renderer=new THREE.WebGLRenderer({antialias:true});
- renderer.setSize(window.innerWidth,window.innerHeight);
- document.body.appendChild(renderer.domElement);
+document.getElementById("menu").style.display="none";
+document.getElementById("hud").style.display="block";
 
- camera.position.set(0,5,10);
+scene=new THREE.Scene();
+camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,3000);
+renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
- let light=new THREE.PointLight(0xffffff,1.2);
- light.position.set(10,10,10);
- scene.add(light);
- scene.add(new THREE.AmbientLight(0x404040,2));
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
+let light=new THREE.DirectionalLight(0xffffff,1);
+light.position.set(100,200,100);
+scene.add(light);
 
-// ===== WASTAMA EILAND MAP =====
+camera.position.set(0,10,20);
 
-// Water
-let water = new THREE.Mesh(
-  new THREE.PlaneGeometry(500,500),
-  new THREE.MeshPhongMaterial({color:0x1e90ff})
+// WATER
+let water=new THREE.Mesh(
+ new THREE.PlaneGeometry(2000,2000),
+ new THREE.MeshPhongMaterial({color:0x1e90ff})
 );
-water.rotation.x = -Math.PI/2;
+water.rotation.x=-Math.PI/2;
 scene.add(water);
 
-// Zand eiland
-let sand = new THREE.Mesh(
-  new THREE.CircleGeometry(150,64),
-  new THREE.MeshPhongMaterial({color:0xffd27f})
+// EILAND
+let island=new THREE.Mesh(
+ new THREE.CircleGeometry(600,128),
+ new THREE.MeshPhongMaterial({color:0x228B22})
 );
-sand.rotation.x = -Math.PI/2;
-sand.position.y = 0.1;
-scene.add(sand);
+island.rotation.x=-Math.PI/2;
+island.position.y=0.2;
+scene.add(island);
 
-// Gras binnenkant
-let grass = new THREE.Mesh(
-  new THREE.CircleGeometry(110,64),
-  new THREE.MeshPhongMaterial({color:0x228B22})
+// LAVA
+lavaZone=new THREE.Mesh(
+ new THREE.CircleGeometry(80,64),
+ new THREE.MeshPhongMaterial({color:0xff3300, emissive:0xff0000})
 );
-grass.rotation.x = -Math.PI/2;
-grass.position.y = 0.2;
-scene.add(grass);
+lavaZone.rotation.x=-Math.PI/2;
+lavaZone.position.set(200,0.3,200);
+scene.add(lavaZone);
 
-// Bergen
-for(let i=0;i<5;i++){
-  let mountain = new THREE.Mesh(
-    new THREE.ConeGeometry(15,40,32),
-    new THREE.MeshPhongMaterial({color:0x555555})
-  );
-  mountain.position.set(
-    (Math.random()-0.5)*150,
-    20,
-    (Math.random()-0.5)*150
-  );
-  scene.add(mountain);
+// BERGEN
+for(let i=0;i<12;i++){
+ let mountain=new THREE.Mesh(
+  new THREE.ConeGeometry(60,150,32),
+  new THREE.MeshPhongMaterial({color:0x555555})
+ );
+ mountain.position.set((Math.random()-0.5)*1000,75,(Math.random()-0.5)*1000);
+ scene.add(mountain);
 }
 
-// Bomen
-for(let i=0;i<20;i++){
-  let trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(1,1,6),
-    new THREE.MeshPhongMaterial({color:0x8b4513})
-  );
-  trunk.position.set(
-    (Math.random()-0.5)*180,
-    3,
-    (Math.random()-0.5)*180
-  );
-  scene.add(trunk);
-
-  let leaves = new THREE.Mesh(
-    new THREE.SphereGeometry(4,16,16),
-    new THREE.MeshPhongMaterial({color:0x006400})
-  );
-  leaves.position.set(trunk.position.x,8,trunk.position.z);
-  scene.add(leaves);
-}
- // ===== LAVA ZONE =====
-let lava = new THREE.Mesh(
-  new THREE.CircleGeometry(40,32),
-  new THREE.MeshPhongMaterial({color:0xff3300, emissive:0xff0000})
-);
-lava.rotation.x = -Math.PI/2;
-lava.position.set(50,0.3,50);
-scene.add(lava);
- // ===== IJS ZONE =====
-let ice = new THREE.Mesh(
-  new THREE.CircleGeometry(40,32),
-  new THREE.MeshPhongMaterial({color:0x88ccff})
-);
-ice.rotation.x = -Math.PI/2;
-ice.position.set(-50,0.3,-50);
-scene.add(ice);
- let stormCircle = new THREE.Mesh(
-  new THREE.RingGeometry(stormRadius-2, stormRadius, 64),
-  new THREE.MeshBasicMaterial({color:0x800080, side:THREE.DoubleSide})
-);
-stormCircle.rotation.x = -Math.PI/2;
-stormCircle.position.y = 0.5;
-scene.add(stormCircle);
-
-// Gebouwen
-for(let i=0;i<15;i++){
-  let building = new THREE.Mesh(
-    new THREE.BoxGeometry(8,Math.random()*20+10,8),
-    new THREE.MeshPhongMaterial({color:0x444444})
-  );
-  building.position.set(
-    (Math.random()-0.5)*150,
-    building.geometry.parameters.height/2,
-    (Math.random()-0.5)*150
-  );
-  scene.add(building);
+// GEBOUWEN (collision)
+for(let i=0;i<25;i++){
+ let height=Math.random()*80+30;
+ let building=new THREE.Mesh(
+  new THREE.BoxGeometry(40,height,40),
+  new THREE.MeshPhongMaterial({color:0x444444})
+ );
+ building.position.set((Math.random()-0.5)*900,height/2,(Math.random()-0.5)*900);
+ scene.add(building);
+ buildings.push(building);
 }
 
- // Random gebouwen
- for(let i=0;i<30;i++){
-   let building=new THREE.Mesh(
-    new THREE.BoxGeometry(3,Math.random()*8+2,3),
-    new THREE.MeshPhongMaterial({color:0x555555})
-   );
-   building.position.set(
-     (Math.random()-0.5)*150,
-     building.geometry.parameters.height/2,
-     (Math.random()-0.5)*150
-   );
-   scene.add(building);
- }
+// BOMEN (geen collision)
+for(let i=0;i<50;i++){
+ let trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(2,2,10),
+  new THREE.MeshPhongMaterial({color:0x8b4513})
+ );
+ trunk.position.set((Math.random()-0.5)*1200,5,(Math.random()-0.5)*1200);
+ scene.add(trunk);
 
- // Player
- let color=0x88ccff;
- if(type==="blaze") color=0xff3300;
- if(type==="volt") color=0x2222ff;
+ let leaves=new THREE.Mesh(
+  new THREE.SphereGeometry(6,16,16),
+  new THREE.MeshPhongMaterial({color:0x006400})
+ );
+ leaves.position.set(trunk.position.x,14,trunk.position.z);
+ scene.add(leaves);
+}
 
-// ===== NIEUWE SPELER (met lichaam) =====
+// PLAYER
+let color=0x88ccff;
+if(type==="blaze") color=0xff3300;
+if(type==="volt") color=0xffff00;
 
-player = new THREE.Group();
+player=new THREE.Group();
 
-// Body
-let body = new THREE.Mesh(
-  new THREE.BoxGeometry(2,3,1),
-  new THREE.MeshPhongMaterial({color:color})
+let body=new THREE.Mesh(
+ new THREE.BoxGeometry(4,7,3),
+ new THREE.MeshPhongMaterial({color:color})
 );
-body.position.y = 3;
+body.position.y=7;
 player.add(body);
 
-// Head
-let head = new THREE.Mesh(
-  new THREE.SphereGeometry(1,32,32),
-  new THREE.MeshPhongMaterial({color:0xffe0bd})
+let head=new THREE.Mesh(
+ new THREE.SphereGeometry(2,32,32),
+ new THREE.MeshPhongMaterial({color:0xffe0bd})
 );
-head.position.y = 5;
+head.position.y=12;
 player.add(head);
-
-// Arms
-let armLeft = new THREE.Mesh(
-  new THREE.BoxGeometry(0.7,2,0.7),
-  new THREE.MeshPhongMaterial({color:color})
-);
-armLeft.position.set(-1.7,3,0);
-player.add(armLeft);
-
-let armRight = armLeft.clone();
-armRight.position.set(1.7,3,0);
-player.add(armRight);
-
-// Legs
-let legLeft = new THREE.Mesh(
-  new THREE.BoxGeometry(0.8,2,0.8),
-  new THREE.MeshPhongMaterial({color:0x222222})
-);
-legLeft.position.set(-0.6,1,0);
-player.add(legLeft);
-
-let legRight = legLeft.clone();
-legRight.position.set(0.6,1,0);
-player.add(legRight);
-
-// Special Effects per character
-
-if(type==="frost"){
-  // IJskroon
-  let crown = new THREE.Mesh(
-    new THREE.ConeGeometry(1.2,2,6),
-    new THREE.MeshPhongMaterial({color:0x88ccff})
-  );
-  crown.position.y = 6.5;
-  player.add(crown);
-}
-
-if(type==="blaze"){
-  // Vuur glow
-  let fireLight = new THREE.PointLight(0xff3300,2,10);
-  fireLight.position.y = 4;
-  player.add(fireLight);
-}
-
-if(type==="volt"){
-  // Bliksem effect
-  let lightning = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1,0.1,4,8),
-    new THREE.MeshPhongMaterial({color:0xffff00})
-  );
-  lightning.rotation.z = Math.PI/4;
-  lightning.position.y = 5;
-  player.add(lightning);
-}
 
 scene.add(player);
 
- player.userData.type=type;
-
- // Bots
- for(let i=0;i<5;i++){
-   let bot=new THREE.Mesh(
-    new THREE.BoxGeometry(2,3,1),
-    new THREE.MeshPhongMaterial({color:0xffffff})
-   );
-   bot.position.set((Math.random()-0.5)*100,1.5,(Math.random()-0.5)*100);
-   bot.userData.hp=50;
-   enemies.push(bot);
-   scene.add(bot);
- }
-
- document.addEventListener("keydown",ability);
- document.addEventListener("click",shoot);
- // Toetsen bijhouden
-document.addEventListener("keydown", (e)=> keys[e.key]=true);
-document.addEventListener("keyup", (e)=> keys[e.key]=false);
-
-// Muis beweging
-document.addEventListener("mousemove", (e)=>{
-  if(document.pointerLockElement === document.body){
-    yaw -= e.movementX * 0.002;
-    pitch -= e.movementY * 0.002;
-    pitch = Math.max(-1.5, Math.min(1.5, pitch));
-  }
-});
-
-// Klik om muis vast te zetten
-document.body.addEventListener("click", ()=>{
-  document.body.requestPointerLock();
-});
-
- animate();
+// MULTIPLAYER SIM (8 bots)
+for(let i=0;i<8;i++){
+ let bot=new THREE.Mesh(
+  new THREE.BoxGeometry(4,7,3),
+  new THREE.MeshPhongMaterial({color:0xffffff})
+ );
+ bot.position.set((Math.random()-0.5)*600,3.5,(Math.random()-0.5)*600);
+ bot.userData.hp=100;
+ enemies.push(bot);
+ scene.add(bot);
 }
 
+document.addEventListener("keydown",(e)=>keys[e.key]=true);
+document.addEventListener("keyup",(e)=>keys[e.key]=false);
 
-
-function ability(e){
- if(e.key==="q" && abilityReady){
-  abilityReady=false;
-
-  if(player.userData.type==="frost"){
-   player.scale.set(1.5,1.5,1.5);
-   setTimeout(()=>player.scale.set(1,1,1),2000);
-  }
-
-  if(player.userData.type==="blaze"){
-   player.position.z-=5;
-  }
-
-  if(player.userData.type==="volt"){
-   player.position.x+=5;
-  }
-
-  setTimeout(()=>abilityReady=true,5000);
+document.addEventListener("mousemove",(e)=>{
+ if(document.pointerLockElement===document.body){
+  yaw-=e.movementX*0.002;
+  pitch-=e.movementY*0.002;
+  pitch=Math.max(-1.5,Math.min(1.5,pitch));
  }
+});
+
+document.body.addEventListener("click",()=>{
+ document.body.requestPointerLock();
+});
+
+document.addEventListener("click",shoot);
+
+animate();
 }
 
 function shoot(){
- let raycaster=new THREE.Raycaster();
- raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
- let hits=raycaster.intersectObjects(enemies);
- if(hits.length>0){
-   let target=hits[0].object;
-   target.userData.hp-=25;
-   if(target.userData.hp<=0){
-     scene.remove(target);
-     enemies=enemies.filter(e=>e!==target);
-     if(enemies.length===0){
-       alert("YOU WIN!");
-       location.reload();
-     }
-   }
+let raycaster=new THREE.Raycaster();
+raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
+let hits=raycaster.intersectObjects(enemies);
+if(hits.length>0){
+ let target=hits[0].object;
+ target.userData.hp-=50;
+ if(target.userData.hp<=0){
+  scene.remove(target);
+  enemies=enemies.filter(e=>e!==target);
+  if(enemies.length===0){
+   endGame("YOU WIN!");
+  }
  }
+}
+}
+
+function endGame(text){
+document.getElementById("gameOverText").innerText=text;
+document.getElementById("gameOver").style.display="block";
+}
+
+function restartGame(){
+location.reload();
+}
+
+function openShop(){
+document.getElementById("shopMenu").style.display="block";
+}
+
+function closeShop(){
+document.getElementById("shopMenu").style.display="none";
 }
 
 function animate(){
- requestAnimationFrame(animate);
+requestAnimationFrame(animate);
 
- enemies.forEach(bot=>{
-  bot.position.x+= (Math.random()-0.5)*0.5;
-  bot.position.z+= (Math.random()-0.5)*0.5;
+let speed=1;
+if(keys["Shift"]) speed=2;
 
-  if(bot.position.distanceTo(player.position)<3){
-    hp-=0.2;
-    document.getElementById("hp").innerText=Math.floor(hp);
-    if(hp<=0){
-      alert("GAME OVER");
-      location.reload();
-    }
-  }
- });
+let moveX=0,moveZ=0;
 
-// Beweging met pijltjes
-let speed = 0.5;
+if(keys["ArrowUp"]) { moveX-=Math.sin(yaw)*speed; moveZ-=Math.cos(yaw)*speed; }
+if(keys["ArrowDown"]) { moveX+=Math.sin(yaw)*speed; moveZ+=Math.cos(yaw)*speed; }
+if(keys["ArrowLeft"]) { moveX-=Math.cos(yaw)*speed; moveZ+=Math.sin(yaw)*speed; }
+if(keys["ArrowRight"]) { moveX+=Math.cos(yaw)*speed; moveZ-=Math.sin(yaw)*speed; }
 
-if(keys["ArrowUp"]) {
-  player.position.x -= Math.sin(yaw) * speed;
-  player.position.z -= Math.cos(yaw) * speed;
-}
-if(keys["ArrowDown"]) {
-  player.position.x += Math.sin(yaw) * speed;
-  player.position.z += Math.cos(yaw) * speed;
-}
-if(keys["ArrowLeft"]) {
-  player.position.x -= Math.cos(yaw) * speed;
-  player.position.z += Math.sin(yaw) * speed;
-}
-if(keys["ArrowRight"]) {
-  player.position.x += Math.cos(yaw) * speed;
-  player.position.z -= Math.sin(yaw) * speed;
+let newPos=new THREE.Vector3(player.position.x+moveX,player.position.y,player.position.z+moveZ);
+
+let blocked=false;
+buildings.forEach(b=>{
+ if(newPos.distanceTo(b.position)<40){
+  blocked=true;
+ }
+});
+
+if(!blocked){
+ player.position.x+=moveX;
+ player.position.z+=moveZ;
 }
 
-// Camera volgen + rondkijken
-camera.position.x = player.position.x;
-camera.position.y = player.position.y + 5;
-camera.position.z = player.position.z;
+// JUMP
+if(keys[" "] && onGround){
+ velocityY=3;
+ onGround=false;
+}
+velocityY-=0.15;
+player.position.y+=velocityY;
+if(player.position.y<=0){
+ player.position.y=0;
+ velocityY=0;
+ onGround=true;
+}
 
-camera.rotation.order = "YXZ";
-camera.rotation.y = yaw;
-camera.rotation.x = pitch;
+// LAVA DAMAGE
+if(player.position.distanceTo(lavaZone.position)<80){
+ hp-=0.5;
+ document.getElementById("hp").innerText=Math.floor(hp);
+ if(hp<=0){
+  endGame("GAME OVER");
+ }
+}
 
- renderer.render(scene,camera);
+// SMART BOTS
+enemies.forEach(bot=>{
+ let dir=player.position.clone().sub(bot.position).normalize();
+ bot.position.add(dir.multiplyScalar(0.5));
+});
+
+camera.position.x=player.position.x;
+camera.position.y=player.position.y+15;
+camera.position.z=player.position.z+25;
+
+camera.rotation.order="YXZ";
+camera.rotation.y=yaw;
+camera.rotation.x=pitch;
+
+renderer.render(scene,camera);
 }
 
 </script>
