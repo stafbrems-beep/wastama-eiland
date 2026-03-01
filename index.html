@@ -2,220 +2,99 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA EILAND ULTRA V3</title>
+<title>WASTAMA ULTRA V5</title>
 <style>
-body { margin:0; overflow:hidden; background:black; font-family:Arial; }
-#menu, #shopMenu, #gameOver {
- position:absolute;
- top:40%;
- left:50%;
- transform:translate(-50%,-50%);
- text-align:center;
- color:white;
-}
-button {
- padding:12px;
- margin:6px;
- font-size:16px;
- cursor:pointer;
-}
-#hud {
- position:absolute;
- top:10px;
- left:10px;
- color:white;
- display:none;
-}
-#shopBtn{
- position:absolute;
- top:10px;
- right:10px;
- display:none;
-}
+body{margin:0;overflow:hidden;background:black;font-family:Arial}
+#menu,#gameOver{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);color:white;text-align:center}
+button{padding:10px;margin:5px;font-size:16px;cursor:pointer}
+#hud{position:absolute;top:10px;left:10px;color:white;display:none}
 </style>
 </head>
 <body>
 
 <div id="menu">
 <h1>WASTAMA EILAND</h1>
-<button onclick="startGame('frost')">Start als ijs mannetje</button>
-<button onclick="startGame('volt')">Start als bliksem mannetje</button>
-<button onclick="startGame('blaze')">Start als vuurmannetje</button>
-<p id="gamesPlayedText"></p>
-</div>
-
-<button id="shopBtn" onclick="openShop()">SHOP</button>
-
-<div id="shopMenu" style="display:none;">
-<h2>SHOP</h2>
-<p>Meer upgrades komen later...</p>
-<button onclick="closeShop()">Sluiten</button>
-</div>
-
-<div id="gameOver" style="display:none;">
-<h1 id="gameOverText"></h1>
-<button onclick="restartGame()">Opnieuw spelen</button>
+<button onclick="startGame()">Start</button>
 </div>
 
 <div id="hud">
 HP: <span id="hp">100</span>
 </div>
 
+<div id="gameOver" style="display:none">
+<h1 id="endText"></h1>
+<button onclick="location.reload()">Opnieuw spelen</button>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 
 let scene,camera,renderer;
-let player,enemies=[];
-let buildings=[];
-let keys={};
-let yaw=0,pitch=0;
+let player,enemies=[],buildings=[],bullets=[];
+let keys={},yaw=0;
 let hp=100;
-let velocityY=0;
-let onGround=true;
-let lavaZone;
-let gameCount=parseInt(localStorage.getItem("gamesPlayed"))||0;
 
-document.getElementById("gamesPlayedText").innerText =
-"Games gespeeld: " + gameCount;
-
-if(gameCount>=10){
- document.getElementById("shopBtn").style.display="block";
-}
-
-function startGame(type){
-
-gameCount++;
-localStorage.setItem("gamesPlayed",gameCount);
+function startGame(){
 
 document.getElementById("menu").style.display="none";
 document.getElementById("hud").style.display="block";
 
 scene=new THREE.Scene();
-camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,3000);
-renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth,window.innerHeight);
+camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
+renderer=new THREE.WebGLRenderer();
+renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
-let light=new THREE.DirectionalLight(0xffffff,1);
-light.position.set(100,200,100);
-scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff,1));
 
-camera.position.set(0,10,20);
-
-// WATER
-let water=new THREE.Mesh(
- new THREE.PlaneGeometry(2000,2000),
- new THREE.MeshPhongMaterial({color:0x1e90ff})
+// Ground
+let ground=new THREE.Mesh(
+new THREE.CircleGeometry(500,64),
+new THREE.MeshBasicMaterial({color:0x228B22})
 );
-water.rotation.x=-Math.PI/2;
-scene.add(water);
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
 
-// EILAND
-let island=new THREE.Mesh(
- new THREE.CircleGeometry(600,128),
- new THREE.MeshPhongMaterial({color:0x228B22})
+// Buildings (hard collision)
+for(let i=0;i<15;i++){
+let h=60;
+let b=new THREE.Mesh(
+new THREE.BoxGeometry(40,h,40),
+new THREE.MeshBasicMaterial({color:0x444444})
 );
-island.rotation.x=-Math.PI/2;
-island.position.y=0.2;
-scene.add(island);
-
-// LAVA
-lavaZone=new THREE.Mesh(
- new THREE.CircleGeometry(80,64),
- new THREE.MeshPhongMaterial({color:0xff3300, emissive:0xff0000})
-);
-lavaZone.rotation.x=-Math.PI/2;
-lavaZone.position.set(200,0.3,200);
-scene.add(lavaZone);
-
-// BERGEN
-for(let i=0;i<12;i++){
- let mountain=new THREE.Mesh(
-  new THREE.ConeGeometry(60,150,32),
-  new THREE.MeshPhongMaterial({color:0x555555})
- );
- mountain.position.set((Math.random()-0.5)*1000,75,(Math.random()-0.5)*1000);
- scene.add(mountain);
+b.position.set((Math.random()-0.5)*600,h/2,(Math.random()-0.5)*600);
+scene.add(b);
+buildings.push(b);
 }
 
-// GEBOUWEN (collision)
-for(let i=0;i<25;i++){
- let height=Math.random()*80+30;
- let building=new THREE.Mesh(
-  new THREE.BoxGeometry(40,height,40),
-  new THREE.MeshPhongMaterial({color:0x444444})
- );
- building.position.set((Math.random()-0.5)*900,height/2,(Math.random()-0.5)*900);
- scene.add(building);
- buildings.push(building);
-}
-
-// BOMEN (geen collision)
-for(let i=0;i<50;i++){
- let trunk=new THREE.Mesh(
-  new THREE.CylinderGeometry(2,2,10),
-  new THREE.MeshPhongMaterial({color:0x8b4513})
- );
- trunk.position.set((Math.random()-0.5)*1200,5,(Math.random()-0.5)*1200);
- scene.add(trunk);
-
- let leaves=new THREE.Mesh(
-  new THREE.SphereGeometry(6,16,16),
-  new THREE.MeshPhongMaterial({color:0x006400})
- );
- leaves.position.set(trunk.position.x,14,trunk.position.z);
- scene.add(leaves);
-}
-
-// PLAYER
-let color=0x88ccff;
-if(type==="blaze") color=0xff3300;
-if(type==="volt") color=0xffff00;
-
-player=new THREE.Group();
-
-let body=new THREE.Mesh(
- new THREE.BoxGeometry(4,7,3),
- new THREE.MeshPhongMaterial({color:color})
+// Player
+player=new THREE.Mesh(
+new THREE.BoxGeometry(5,10,5),
+new THREE.MeshBasicMaterial({color:0x00aaff})
 );
-body.position.y=7;
-player.add(body);
-
-let head=new THREE.Mesh(
- new THREE.SphereGeometry(2,32,32),
- new THREE.MeshPhongMaterial({color:0xffe0bd})
-);
-head.position.y=12;
-player.add(head);
-
+player.position.y=5;
 scene.add(player);
 
-// MULTIPLAYER SIM (8 bots)
-for(let i=0;i<8;i++){
- let bot=new THREE.Mesh(
-  new THREE.BoxGeometry(4,7,3),
-  new THREE.MeshPhongMaterial({color:0xffffff})
- );
- bot.position.set((Math.random()-0.5)*600,3.5,(Math.random()-0.5)*600);
- bot.userData.hp=100;
- enemies.push(bot);
- scene.add(bot);
+// Bots
+for(let i=0;i<5;i++){
+let bot=new THREE.Mesh(
+new THREE.BoxGeometry(5,10,5),
+new THREE.MeshBasicMaterial({color:0xff0000})
+);
+bot.position.set((Math.random()-0.5)*400,5,(Math.random()-0.5)*400);
+enemies.push(bot);
+scene.add(bot);
 }
 
-document.addEventListener("keydown",(e)=>keys[e.key]=true);
-document.addEventListener("keyup",(e)=>keys[e.key]=false);
+document.addEventListener("keydown",e=>keys[e.key]=true);
+document.addEventListener("keyup",e=>keys[e.key]=false);
 
-document.addEventListener("mousemove",(e)=>{
- if(document.pointerLockElement===document.body){
-  yaw-=e.movementX*0.002;
-  pitch-=e.movementY*0.002;
-  pitch=Math.max(-1.5,Math.min(1.5,pitch));
- }
-});
+document.body.onclick=()=>document.body.requestPointerLock();
 
-document.body.addEventListener("click",()=>{
- document.body.requestPointerLock();
+document.addEventListener("mousemove",e=>{
+if(document.pointerLockElement===document.body){
+yaw-=e.movementX*0.002;
+}
 });
 
 document.addEventListener("click",shoot);
@@ -224,103 +103,103 @@ animate();
 }
 
 function shoot(){
-let raycaster=new THREE.Raycaster();
-raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
-let hits=raycaster.intersectObjects(enemies);
-if(hits.length>0){
- let target=hits[0].object;
- target.userData.hp-=50;
- if(target.userData.hp<=0){
-  scene.remove(target);
-  enemies=enemies.filter(e=>e!==target);
-  if(enemies.length===0){
-   endGame("YOU WIN!");
-  }
- }
-}
-}
 
-function endGame(text){
-document.getElementById("gameOverText").innerText=text;
-document.getElementById("gameOver").style.display="block";
-}
+let bullet=new THREE.Mesh(
+new THREE.SphereGeometry(2,8,8),
+new THREE.MeshBasicMaterial({color:0xffff00})
+);
 
-function restartGame(){
-location.reload();
-}
+bullet.position.copy(player.position);
 
-function openShop(){
-document.getElementById("shopMenu").style.display="block";
-}
+bullet.userData.dir=new THREE.Vector3(
+-Math.sin(yaw),
+0,
+-Math.cos(yaw)
+);
 
-function closeShop(){
-document.getElementById("shopMenu").style.display="none";
+bullets.push(bullet);
+scene.add(bullet);
 }
 
 function animate(){
 requestAnimationFrame(animate);
 
-let speed=1;
-if(keys["Shift"]) speed=2;
+// Movement
+let speed=2;
+let move=new THREE.Vector3();
 
-let moveX=0,moveZ=0;
+if(keys["ArrowUp"]) move.z-=speed;
+if(keys["ArrowDown"]) move.z+=speed;
+if(keys["ArrowLeft"]) move.x-=speed;
+if(keys["ArrowRight"]) move.x+=speed;
 
-if(keys["ArrowUp"]) { moveX-=Math.sin(yaw)*speed; moveZ-=Math.cos(yaw)*speed; }
-if(keys["ArrowDown"]) { moveX+=Math.sin(yaw)*speed; moveZ+=Math.cos(yaw)*speed; }
-if(keys["ArrowLeft"]) { moveX-=Math.cos(yaw)*speed; moveZ+=Math.sin(yaw)*speed; }
-if(keys["ArrowRight"]) { moveX+=Math.cos(yaw)*speed; moveZ-=Math.sin(yaw)*speed; }
+move.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
 
-let newPos=new THREE.Vector3(player.position.x+moveX,player.position.y,player.position.z+moveZ);
+let newPos=player.position.clone().add(move);
 
+// Collision buildings
 let blocked=false;
-buildings.forEach(b=>{
- if(newPos.distanceTo(b.position)<40){
-  blocked=true;
- }
-});
-
-if(!blocked){
- player.position.x+=moveX;
- player.position.z+=moveZ;
+for(let b of buildings){
+if(Math.abs(newPos.x-b.position.x)<25 &&
+   Math.abs(newPos.z-b.position.z)<25){
+blocked=true;
+}
 }
 
-// JUMP
-if(keys[" "] && onGround){
- velocityY=3;
- onGround=false;
+if(!blocked) player.position.copy(newPos);
+
+// Bullets move + instant kill
+for(let i=bullets.length-1;i>=0;i--){
+let bullet=bullets[i];
+bullet.position.add(bullet.userData.dir.clone().multiplyScalar(8));
+
+for(let j=enemies.length-1;j>=0;j--){
+let bot=enemies[j];
+if(bullet.position.distanceTo(bot.position)<6){
+
+scene.remove(bot);
+scene.remove(bullet);
+
+enemies.splice(j,1);
+bullets.splice(i,1);
+
+if(enemies.length===0){
+endGame("YOU WIN");
 }
-velocityY-=0.15;
-player.position.y+=velocityY;
-if(player.position.y<=0){
- player.position.y=0;
- velocityY=0;
- onGround=true;
+break;
+}
+}
 }
 
-// LAVA DAMAGE
-if(player.position.distanceTo(lavaZone.position)<80){
- hp-=0.5;
- document.getElementById("hp").innerText=Math.floor(hp);
- if(hp<=0){
-  endGame("GAME OVER");
- }
+// Bots chase + HIGH DAMAGE
+for(let bot of enemies){
+let dir=player.position.clone().sub(bot.position).normalize();
+bot.position.add(dir.multiplyScalar(1));
+
+if(bot.position.distanceTo(player.position)<8){
+hp-=2;   // BIG DAMAGE
+document.getElementById("hp").innerText=hp;
+if(hp<=0){
+endGame("GAME OVER");
+}
+}
 }
 
-// SMART BOTS
-enemies.forEach(bot=>{
- let dir=player.position.clone().sub(bot.position).normalize();
- bot.position.add(dir.multiplyScalar(0.5));
-});
+// Camera
+camera.position.set(
+player.position.x - Math.sin(yaw)*30,
+20,
+player.position.z - Math.cos(yaw)*30
+);
 
-camera.position.x=player.position.x;
-camera.position.y=player.position.y+15;
-camera.position.z=player.position.z+25;
-
-camera.rotation.order="YXZ";
-camera.rotation.y=yaw;
-camera.rotation.x=pitch;
+camera.lookAt(player.position);
 
 renderer.render(scene,camera);
+}
+
+function endGame(text){
+document.getElementById("endText").innerText=text;
+document.getElementById("gameOver").style.display="block";
 }
 
 </script>
