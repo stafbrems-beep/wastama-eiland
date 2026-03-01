@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA ULTIMATE V6</title>
+<title>WASTAMA FINAL V7</title>
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial}
 #menu,#gameOver,#shop{
@@ -22,21 +22,18 @@ button{padding:10px;margin:5px;font-size:16px;cursor:pointer}
 
 <div id="menu">
 <h1>WASTAMA EILAND</h1>
-<button onclick="startGame('ice')">❄ Ijsmannetje</button>
-<button onclick="startGame('fire')">🔥 Vuurmannetje</button>
-<button onclick="startGame('volt')">⚡ Bliksem mannetje</button>
+<button onclick="startGame('ice')">❄ IJs</button>
+<button onclick="startGame('fire')">🔥 Vuur</button>
+<button onclick="startGame('volt')">⚡ Bliksem</button>
 <p id="gamesText"></p>
 </div>
 
-<div id="hud">
-HP: <span id="hp">100</span>
-</div>
-
+<div id="hud">HP: <span id="hp">100</span></div>
 <button id="shopBtn" onclick="openShop()">SHOP</button>
 
 <div id="shop" style="display:none">
 <h2>SHOP</h2>
-<p>Unlocked na 10 games!</p>
+<p>Unlocked na 10 games</p>
 <button onclick="closeShop()">Sluiten</button>
 </div>
 
@@ -49,12 +46,13 @@ HP: <span id="hp">100</span>
 <script>
 
 let scene,camera,renderer;
-let player,enemies=[],buildings=[],bullets=[];
+let player,enemies=[],playerBullets=[],botBullets=[],buildings=[];
 let keys={},yaw=0;
 let hp=100;
 let character="ice";
-let games=parseInt(localStorage.getItem("gamesPlayed"))||0;
+let gameActive=true;
 
+let games=parseInt(localStorage.getItem("gamesPlayed"))||0;
 document.getElementById("gamesText").innerText="Games gespeeld: "+games;
 if(games>=10) document.getElementById("shopBtn").style.display="block";
 
@@ -68,24 +66,33 @@ document.getElementById("menu").style.display="none";
 document.getElementById("hud").style.display="block";
 
 scene=new THREE.Scene();
-camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
+camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,3000);
 renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// GROUND
-let ground=new THREE.Mesh(
+// ZEE
+let sea=new THREE.Mesh(
+new THREE.CircleGeometry(2000,64),
+new THREE.MeshBasicMaterial({color:0x1e90ff})
+);
+sea.rotation.x=-Math.PI/2;
+scene.add(sea);
+
+// EILAND
+let island=new THREE.Mesh(
 new THREE.CircleGeometry(600,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
 );
-ground.rotation.x=-Math.PI/2;
-scene.add(ground);
+island.rotation.x=-Math.PI/2;
+island.position.y=0.1;
+scene.add(island);
 
 // LAVA
 let lava=new THREE.Mesh(
-new THREE.CircleGeometry(80,32),
+new THREE.CircleGeometry(100,32),
 new THREE.MeshBasicMaterial({color:0xff3300})
 );
 lava.rotation.x=-Math.PI/2;
@@ -93,11 +100,11 @@ lava.position.set(200,0.2,200);
 scene.add(lava);
 scene.userData.lava=lava;
 
-// BUILDINGS (collision)
+// GEBOUWEN (collision)
 for(let i=0;i<20;i++){
-let h=60;
+let h=80;
 let b=new THREE.Mesh(
-new THREE.BoxGeometry(40,h,40),
+new THREE.BoxGeometry(50,h,50),
 new THREE.MeshBasicMaterial({color:0x444444})
 );
 b.position.set((Math.random()-0.5)*800,h/2,(Math.random()-0.5)*800);
@@ -105,47 +112,54 @@ scene.add(b);
 buildings.push(b);
 }
 
-// TREES (no collision)
-for(let i=0;i<40;i++){
-let t=new THREE.Mesh(
-new THREE.CylinderGeometry(2,2,10),
+// ECHTE BOMEN
+for(let i=0;i<60;i++){
+let trunk=new THREE.Mesh(
+new THREE.CylinderGeometry(3,3,15),
 new THREE.MeshBasicMaterial({color:0x8b4513})
 );
-t.position.set((Math.random()-0.5)*900,5,(Math.random()-0.5)*900);
-scene.add(t);
+trunk.position.set((Math.random()-0.5)*1000,7,(Math.random()-0.5)*1000);
+scene.add(trunk);
+
+let leaves=new THREE.Mesh(
+new THREE.SphereGeometry(10,16,16),
+new THREE.MeshBasicMaterial({color:0x006400})
+);
+leaves.position.set(trunk.position.x,20,trunk.position.z);
+scene.add(leaves);
 }
 
-// PLAYER COLOR
-let color=0x88ccff;
+// PLAYER
+let color=0x00ffff;
 if(character==="fire") color=0xff0000;
 if(character==="volt") color=0xffff00;
 
 player=new THREE.Mesh(
-new THREE.BoxGeometry(5,10,5),
+new THREE.BoxGeometry(6,12,6),
 new THREE.MeshBasicMaterial({color:color})
 );
-player.position.y=5;
+player.position.y=6;
 scene.add(player);
 
 // BOTS
 for(let i=0;i<6;i++){
 let bot=new THREE.Mesh(
-new THREE.BoxGeometry(5,10,5),
+new THREE.BoxGeometry(6,12,6),
 new THREE.MeshBasicMaterial({color:0xffffff})
 );
-bot.position.set((Math.random()-0.5)*500,5,(Math.random()-0.5)*500);
+bot.position.set((Math.random()-0.5)*600,6,(Math.random()-0.5)*600);
+bot.userData.shootCooldown=0;
 enemies.push(bot);
 scene.add(bot);
 }
 
 document.addEventListener("keydown",e=>{
 keys[e.key]=true;
-if(e.code==="Space") shoot();
+if(e.code==="Space" && gameActive) shoot();
 });
 document.addEventListener("keyup",e=>keys[e.key]=false);
 
 document.body.onclick=()=>document.body.requestPointerLock();
-
 document.addEventListener("mousemove",e=>{
 if(document.pointerLockElement===document.body){
 yaw-=e.movementX*0.002;
@@ -167,87 +181,105 @@ new THREE.MeshBasicMaterial({color:bulletColor})
 );
 
 bullet.position.copy(player.position);
+bullet.userData.dir=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
 
-bullet.userData.dir=new THREE.Vector3(
--Math.sin(yaw),
-0,
--Math.cos(yaw)
-);
-
-bullets.push(bullet);
+playerBullets.push(bullet);
 scene.add(bullet);
 }
 
 function animate(){
 requestAnimationFrame(animate);
+if(!gameActive){ renderer.render(scene,camera); return; }
 
 // MOVEMENT
-let speed=2;
-if(keys["Shift"]) speed=4;
+let speed=3;
+if(keys["Shift"]) speed=6;
 
 let move=new THREE.Vector3();
-
 if(keys["ArrowUp"]) move.z-=speed;
 if(keys["ArrowDown"]) move.z+=speed;
 if(keys["ArrowLeft"]) move.x-=speed;
 if(keys["ArrowRight"]) move.x+=speed;
 
 move.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
-
 let newPos=player.position.clone().add(move);
 
-// COLLISION BUILDINGS
+// BUILDING COLLISION
 let blocked=false;
 for(let b of buildings){
-if(Math.abs(newPos.x-b.position.x)<25 &&
-Math.abs(newPos.z-b.position.z)<25){
+if(Math.abs(newPos.x-b.position.x)<30 &&
+Math.abs(newPos.z-b.position.z)<30){
 blocked=true;
 }
 }
 if(!blocked) player.position.copy(newPos);
 
-// LAVA DAMAGE
-if(player.position.distanceTo(scene.userData.lava.position)<80){
-hp-=0.5;
-document.getElementById("hp").innerText=hp;
-if(hp<=0) endGame("GAME OVER");
+// VERDRINKEN IN ZEE
+if(player.position.length()>600){
+endGame("VERDRONKEN");
 }
 
-// BULLETS
-for(let i=bullets.length-1;i>=0;i--){
-let bullet=bullets[i];
-bullet.position.add(bullet.userData.dir.clone().multiplyScalar(8));
+// PLAYER BULLETS
+for(let i=playerBullets.length-1;i>=0;i--){
+let bullet=playerBullets[i];
+bullet.position.add(bullet.userData.dir.clone().multiplyScalar(10));
 
 for(let j=enemies.length-1;j>=0;j--){
 let bot=enemies[j];
-if(bullet.position.distanceTo(bot.position)<6){
+if(bullet.position.distanceTo(bot.position)<8){
 scene.remove(bot);
 scene.remove(bullet);
 enemies.splice(j,1);
-bullets.splice(i,1);
+playerBullets.splice(i,1);
 if(enemies.length===0) endGame("YOU WIN");
 break;
 }
 }
 }
 
-// BOTS ATTACK
+// BOTS
 for(let bot of enemies){
-let dir=player.position.clone().sub(bot.position).normalize();
-bot.position.add(dir.multiplyScalar(1));
 
-if(bot.position.distanceTo(player.position)<8){
-hp-=1;
+// bots schieten
+bot.userData.shootCooldown--;
+if(bot.userData.shootCooldown<=0){
+
+let bullet=new THREE.Mesh(
+new THREE.SphereGeometry(2,8,8),
+new THREE.MeshBasicMaterial({color:0xff0000})
+);
+
+bullet.position.copy(bot.position);
+
+let dir=player.position.clone().sub(bot.position).normalize();
+bullet.userData.dir=dir;
+
+botBullets.push(bullet);
+scene.add(bullet);
+
+bot.userData.shootCooldown=100;
+}
+}
+
+// BOT BULLETS HIT PLAYER
+for(let i=botBullets.length-1;i>=0;i--){
+let bullet=botBullets[i];
+bullet.position.add(bullet.userData.dir.clone().multiplyScalar(8));
+
+if(bullet.position.distanceTo(player.position)<8){
+hp-=50;
 document.getElementById("hp").innerText=hp;
+scene.remove(bullet);
+botBullets.splice(i,1);
 if(hp<=0) endGame("GAME OVER");
 }
 }
 
 // CAMERA
 camera.position.set(
-player.position.x - Math.sin(yaw)*30,
-20,
-player.position.z - Math.cos(yaw)*30
+player.position.x - Math.sin(yaw)*40,
+25,
+player.position.z - Math.cos(yaw)*40
 );
 camera.lookAt(player.position);
 
@@ -255,16 +287,13 @@ renderer.render(scene,camera);
 }
 
 function endGame(text){
+gameActive=false;
 document.getElementById("endText").innerText=text;
 document.getElementById("gameOver").style.display="block";
 }
 
-function openShop(){
-document.getElementById("shop").style.display="block";
-}
-function closeShop(){
-document.getElementById("shop").style.display="none";
-}
+function openShop(){document.getElementById("shop").style.display="block";}
+function closeShop(){document.getElementById("shop").style.display="none";}
 
 </script>
 </body>
