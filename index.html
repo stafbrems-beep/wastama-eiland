@@ -2,23 +2,42 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA ULTRA V5</title>
+<title>WASTAMA ULTIMATE V6</title>
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial}
-#menu,#gameOver{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);color:white;text-align:center}
+#menu,#gameOver,#shop{
+position:absolute;
+top:40%;
+left:50%;
+transform:translate(-50%,-50%);
+color:white;
+text-align:center;
+}
 button{padding:10px;margin:5px;font-size:16px;cursor:pointer}
 #hud{position:absolute;top:10px;left:10px;color:white;display:none}
+#shopBtn{position:absolute;top:10px;right:10px;display:none}
 </style>
 </head>
 <body>
 
 <div id="menu">
 <h1>WASTAMA EILAND</h1>
-<button onclick="startGame()">Start</button>
+<button onclick="startGame('ice')">❄ Ijsmannetje</button>
+<button onclick="startGame('fire')">🔥 Vuurmannetje</button>
+<button onclick="startGame('volt')">⚡ Bliksem mannetje</button>
+<p id="gamesText"></p>
 </div>
 
 <div id="hud">
 HP: <span id="hp">100</span>
+</div>
+
+<button id="shopBtn" onclick="openShop()">SHOP</button>
+
+<div id="shop" style="display:none">
+<h2>SHOP</h2>
+<p>Unlocked na 10 games!</p>
+<button onclick="closeShop()">Sluiten</button>
 </div>
 
 <div id="gameOver" style="display:none">
@@ -33,8 +52,17 @@ let scene,camera,renderer;
 let player,enemies=[],buildings=[],bullets=[];
 let keys={},yaw=0;
 let hp=100;
+let character="ice";
+let games=parseInt(localStorage.getItem("gamesPlayed"))||0;
 
-function startGame(){
+document.getElementById("gamesText").innerText="Games gespeeld: "+games;
+if(games>=10) document.getElementById("shopBtn").style.display="block";
+
+function startGame(type){
+
+character=type;
+games++;
+localStorage.setItem("gamesPlayed",games);
 
 document.getElementById("menu").style.display="none";
 document.getElementById("hud").style.display="block";
@@ -47,46 +75,73 @@ document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// Ground
+// GROUND
 let ground=new THREE.Mesh(
-new THREE.CircleGeometry(500,64),
+new THREE.CircleGeometry(600,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
 );
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
-// Buildings (hard collision)
-for(let i=0;i<15;i++){
+// LAVA
+let lava=new THREE.Mesh(
+new THREE.CircleGeometry(80,32),
+new THREE.MeshBasicMaterial({color:0xff3300})
+);
+lava.rotation.x=-Math.PI/2;
+lava.position.set(200,0.2,200);
+scene.add(lava);
+scene.userData.lava=lava;
+
+// BUILDINGS (collision)
+for(let i=0;i<20;i++){
 let h=60;
 let b=new THREE.Mesh(
 new THREE.BoxGeometry(40,h,40),
 new THREE.MeshBasicMaterial({color:0x444444})
 );
-b.position.set((Math.random()-0.5)*600,h/2,(Math.random()-0.5)*600);
+b.position.set((Math.random()-0.5)*800,h/2,(Math.random()-0.5)*800);
 scene.add(b);
 buildings.push(b);
 }
 
-// Player
+// TREES (no collision)
+for(let i=0;i<40;i++){
+let t=new THREE.Mesh(
+new THREE.CylinderGeometry(2,2,10),
+new THREE.MeshBasicMaterial({color:0x8b4513})
+);
+t.position.set((Math.random()-0.5)*900,5,(Math.random()-0.5)*900);
+scene.add(t);
+}
+
+// PLAYER COLOR
+let color=0x88ccff;
+if(character==="fire") color=0xff0000;
+if(character==="volt") color=0xffff00;
+
 player=new THREE.Mesh(
 new THREE.BoxGeometry(5,10,5),
-new THREE.MeshBasicMaterial({color:0x00aaff})
+new THREE.MeshBasicMaterial({color:color})
 );
 player.position.y=5;
 scene.add(player);
 
-// Bots
-for(let i=0;i<5;i++){
+// BOTS
+for(let i=0;i<6;i++){
 let bot=new THREE.Mesh(
 new THREE.BoxGeometry(5,10,5),
-new THREE.MeshBasicMaterial({color:0xff0000})
+new THREE.MeshBasicMaterial({color:0xffffff})
 );
-bot.position.set((Math.random()-0.5)*400,5,(Math.random()-0.5)*400);
+bot.position.set((Math.random()-0.5)*500,5,(Math.random()-0.5)*500);
 enemies.push(bot);
 scene.add(bot);
 }
 
-document.addEventListener("keydown",e=>keys[e.key]=true);
+document.addEventListener("keydown",e=>{
+keys[e.key]=true;
+if(e.code==="Space") shoot();
+});
 document.addEventListener("keyup",e=>keys[e.key]=false);
 
 document.body.onclick=()=>document.body.requestPointerLock();
@@ -97,16 +152,18 @@ yaw-=e.movementX*0.002;
 }
 });
 
-document.addEventListener("click",shoot);
-
 animate();
 }
 
 function shoot(){
 
+let bulletColor=0x00ffff;
+if(character==="fire") bulletColor=0xff3300;
+if(character==="volt") bulletColor=0xffff00;
+
 let bullet=new THREE.Mesh(
 new THREE.SphereGeometry(2,8,8),
-new THREE.MeshBasicMaterial({color:0xffff00})
+new THREE.MeshBasicMaterial({color:bulletColor})
 );
 
 bullet.position.copy(player.position);
@@ -124,8 +181,10 @@ scene.add(bullet);
 function animate(){
 requestAnimationFrame(animate);
 
-// Movement
+// MOVEMENT
 let speed=2;
+if(keys["Shift"]) speed=4;
+
 let move=new THREE.Vector3();
 
 if(keys["ArrowUp"]) move.z-=speed;
@@ -137,18 +196,24 @@ move.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
 
 let newPos=player.position.clone().add(move);
 
-// Collision buildings
+// COLLISION BUILDINGS
 let blocked=false;
 for(let b of buildings){
 if(Math.abs(newPos.x-b.position.x)<25 &&
-   Math.abs(newPos.z-b.position.z)<25){
+Math.abs(newPos.z-b.position.z)<25){
 blocked=true;
 }
 }
-
 if(!blocked) player.position.copy(newPos);
 
-// Bullets move + instant kill
+// LAVA DAMAGE
+if(player.position.distanceTo(scene.userData.lava.position)<80){
+hp-=0.5;
+document.getElementById("hp").innerText=hp;
+if(hp<=0) endGame("GAME OVER");
+}
+
+// BULLETS
 for(let i=bullets.length-1;i>=0;i--){
 let bullet=bullets[i];
 bullet.position.add(bullet.userData.dir.clone().multiplyScalar(8));
@@ -156,42 +221,34 @@ bullet.position.add(bullet.userData.dir.clone().multiplyScalar(8));
 for(let j=enemies.length-1;j>=0;j--){
 let bot=enemies[j];
 if(bullet.position.distanceTo(bot.position)<6){
-
 scene.remove(bot);
 scene.remove(bullet);
-
 enemies.splice(j,1);
 bullets.splice(i,1);
-
-if(enemies.length===0){
-endGame("YOU WIN");
-}
+if(enemies.length===0) endGame("YOU WIN");
 break;
 }
 }
 }
 
-// Bots chase + HIGH DAMAGE
+// BOTS ATTACK
 for(let bot of enemies){
 let dir=player.position.clone().sub(bot.position).normalize();
 bot.position.add(dir.multiplyScalar(1));
 
 if(bot.position.distanceTo(player.position)<8){
-hp-=2;   // BIG DAMAGE
+hp-=1;
 document.getElementById("hp").innerText=hp;
-if(hp<=0){
-endGame("GAME OVER");
-}
+if(hp<=0) endGame("GAME OVER");
 }
 }
 
-// Camera
+// CAMERA
 camera.position.set(
 player.position.x - Math.sin(yaw)*30,
 20,
 player.position.z - Math.cos(yaw)*30
 );
-
 camera.lookAt(player.position);
 
 renderer.render(scene,camera);
@@ -200,6 +257,13 @@ renderer.render(scene,camera);
 function endGame(text){
 document.getElementById("endText").innerText=text;
 document.getElementById("gameOver").style.display="block";
+}
+
+function openShop(){
+document.getElementById("shop").style.display="block";
+}
+function closeShop(){
+document.getElementById("shop").style.display="none";
 }
 
 </script>
