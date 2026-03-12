@@ -103,6 +103,7 @@ display:none;
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
 
 let scene,camera,renderer;
@@ -168,7 +169,29 @@ scene.add(b);
 buildings.push(b);
 }
 
+/* TREES */
+for(let i=0;i<25;i++){
+
+let trunk=new THREE.Mesh(
+new THREE.CylinderGeometry(2,2,20),
+new THREE.MeshBasicMaterial({color:0x8b4513})
+);
+
+let leaves=new THREE.Mesh(
+new THREE.SphereGeometry(8),
+new THREE.MeshBasicMaterial({color:0x228b22})
+);
+
+trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900);
+leaves.position.set(trunk.position.x,22,trunk.position.z);
+
+scene.add(trunk);
+scene.add(leaves);
+
+}
+
 /* PLAYER */
+
 let color=0x00ffff;
 if(type==="fire") color=0xff0000;
 if(type==="volt") color=0xffff00;
@@ -177,31 +200,48 @@ player=new THREE.Mesh(
 new THREE.BoxGeometry(6,12,6),
 new THREE.MeshBasicMaterial({color:color})
 );
+
 player.position.y=6;
 scene.add(player);
 
 /* BOTS */
+
 let botCount=Math.floor(Math.random()*7)+4;
+
 for(let i=0;i<botCount;i++){
+
 let bot=new THREE.Mesh(
 new THREE.BoxGeometry(6,12,6),
 new THREE.MeshBasicMaterial({color:0xffffff})
 );
+
 bot.position.set((Math.random()-0.5)*600,6,(Math.random()-0.5)*600);
+
 bot.userData.cooldown=120;
+
 bot.userData.moveDir=new THREE.Vector3(
 (Math.random()-0.5),0,(Math.random()-0.5)
 ).normalize();
+
 enemies.push(bot);
 scene.add(bot);
+
 }
 
 document.addEventListener("keydown",e=>{
 keys[e.key]=true;
 if(e.code==="Space" && gameActive) shoot();
 });
+
 document.addEventListener("keyup",e=>keys[e.key]=false);
+
 document.addEventListener("click",()=>{ if(gameActive) shoot(); });
+
+/* MOUSE LOOK */
+
+document.addEventListener("mousemove",e=>{
+yaw -= e.movementX * 0.002;
+});
 
 animate();
 }
@@ -209,6 +249,7 @@ animate();
 function shoot(){
 
 let bulletColor=0x00ffff;
+
 if(character==="fire") bulletColor=0xff3300;
 if(character==="volt") bulletColor=0xffff00;
 
@@ -218,17 +259,29 @@ new THREE.MeshBasicMaterial({color:bulletColor})
 );
 
 bullet.position.copy(player.position);
-bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+
+bullet.userData.dir=new THREE.Vector3(
+Math.sin(yaw),
+0,
+Math.cos(yaw)
+);
 
 playerBullets.push(bullet);
 scene.add(bullet);
+
 }
 
 function animate(){
+
 requestAnimationFrame(animate);
-if(!gameActive){ if(renderer) renderer.render(scene,camera); return; }
+
+if(!gameActive){
+if(renderer) renderer.render(scene,camera);
+return;
+}
 
 let move=new THREE.Vector3();
+
 if(keys["ArrowUp"]) move.z-=3;
 if(keys["ArrowDown"]) move.z+=3;
 if(keys["ArrowLeft"]) move.x-=3;
@@ -237,13 +290,18 @@ if(keys["ArrowRight"]) move.x+=3;
 let newPos=player.position.clone().add(move);
 
 /* COLLISION */
+
 let blocked=false;
+
 for(let b of buildings){
+
 if(Math.abs(newPos.x-b.position.x)<30 &&
 Math.abs(newPos.z-b.position.z)<30){
 blocked=true;
 }
+
 }
+
 if(!blocked) player.position.copy(newPos);
 
 if(player.position.length()>600){
@@ -251,80 +309,129 @@ endGame("VERDRONKEN");
 }
 
 /* PLAYER BULLETS */
+
 for(let i=playerBullets.length-1;i>=0;i--){
+
 let bullet=playerBullets[i];
-bullet.position.add(bullet.userData.dir.clone().multiplyScalar(10));
+
+bullet.position.add(
+bullet.userData.dir.clone().multiplyScalar(10)
+);
 
 for(let j=enemies.length-1;j>=0;j--){
+
 if(bullet.position.distanceTo(enemies[j].position)<8){
+
 scene.remove(enemies[j]);
 enemies.splice(j,1);
+
 scene.remove(bullet);
 playerBullets.splice(i,1);
+
 if(enemies.length===0){
+
 gamesWon++;
 localStorage.setItem("gamesWon",gamesWon);
 updateTopBar();
+
 endGame("GEWONNEN PROFICIAT");
+
 }
+
 break;
 }
 }
 }
 
 /* BOTS */
+
 for(let bot of enemies){
 
 bot.position.add(bot.userData.moveDir.clone());
 
 if(Math.random()<0.02){
+
 bot.userData.moveDir=new THREE.Vector3(
 (Math.random()-0.5),0,(Math.random()-0.5)
 ).normalize();
+
 }
 
 bot.userData.cooldown--;
+
 if(bot.userData.cooldown<=0){
+
 let dir=player.position.clone().sub(bot.position).normalize();
+
 let bullet=new THREE.Mesh(
 new THREE.SphereGeometry(2,8,8),
 new THREE.MeshBasicMaterial({color:0xff0000})
 );
+
 bullet.position.copy(bot.position);
 bullet.userData.dir=dir;
+
 botBullets.push(bullet);
 scene.add(bullet);
+
 bot.userData.cooldown=120;
+
 }
+
 }
 
 /* BOT BULLETS */
+
 for(let i=botBullets.length-1;i>=0;i--){
+
 let bullet=botBullets[i];
-bullet.position.add(bullet.userData.dir.clone().multiplyScalar(8));
+
+bullet.position.add(
+bullet.userData.dir.clone().multiplyScalar(8)
+);
+
 if(bullet.position.distanceTo(player.position)<8){
+
 hp-=50;
 document.getElementById("hp").innerText=hp;
+
 scene.remove(bullet);
 botBullets.splice(i,1);
+
 if(hp<=0) endGame("GAME OVER");
-}
+
 }
 
-camera.position.set(player.position.x-40,25,player.position.z-40);
+}
+
+/* CAMERA (ROND KIJKEN) */
+
+camera.position.x = player.position.x - Math.sin(yaw)*40;
+camera.position.z = player.position.z - Math.cos(yaw)*40;
+camera.position.y = 25;
+
 camera.lookAt(player.position);
 
 renderer.render(scene,camera);
+
 }
 
 function endGame(text){
+
 gameActive=false;
+
 document.getElementById("endText").innerText=text;
 document.getElementById("gameOver").style.display="block";
+
 }
 
-function openShop(){ document.getElementById("shopOverlay").style.display="block"; }
-function closeShop(){ document.getElementById("shopOverlay").style.display="none"; }
+function openShop(){
+document.getElementById("shopOverlay").style.display="block";
+}
+
+function closeShop(){
+document.getElementById("shopOverlay").style.display="none";
+}
 
 </script>
 </body>
