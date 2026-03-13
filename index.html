@@ -17,22 +17,26 @@ color:white;
 #difficultyMenu,
 #characterMenu,
 #gameOver{
-
 position:absolute;
 top:40%;
 left:50%;
 transform:translate(-50%,-50%);
 text-align:center;
-
 }
 
 #characterMenu{display:none;}
 
 #hud{
 position:absolute;
-top:20px;
+top:60px;
 left:20px;
 display:none;
+}
+
+#stats{
+position:absolute;
+top:10px;
+left:20px;
 }
 
 button{
@@ -47,39 +51,43 @@ cursor:pointer;
 
 <body>
 
+<div id="stats">
+<div>Games gespeeld: <span id="played">0</span></div>
+<div>Games gewonnen: <span id="won">0</span></div>
+</div>
+
 <div id="difficultyMenu">
-
 <h1>Kies moeilijkheid</h1>
-
 <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
 <button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
-
 </div>
 
 <div id="characterMenu">
-
 <h1>Kies je mannetje</h1>
-
 <button onclick="startGame()">❄ IJs</button>
 <button onclick="startGame()">🔥 Vuur</button>
 <button onclick="startGame()">⚡ Bliksem</button>
-
 </div>
 
 <div id="hud">
-Hits: <span id="hp">0</span> / 3
+<div>Hits: <span id="hp">0</span> / 3</div>
+<div>Gedood: <span id="kills">0</span></div>
 </div>
 
 <div id="gameOver" style="display:none">
-
 <h1 id="endText"></h1>
 <button onclick="location.reload()">Opnieuw spelen</button>
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
+
+let gamesPlayed=parseInt(localStorage.getItem("played"))||0
+let gamesWon=parseInt(localStorage.getItem("won"))||0
+
+document.getElementById("played").innerText=gamesPlayed
+document.getElementById("won").innerText=gamesWon
 
 let difficulty="easy"
 
@@ -94,6 +102,8 @@ let keys={}
 let yaw=0
 
 let hits=0
+let kills=0
+
 let gameActive=false
 
 let shootTimer=0
@@ -110,6 +120,10 @@ document.getElementById("characterMenu").style.display="block"
 
 function startGame(){
 
+gamesPlayed++
+localStorage.setItem("played",gamesPlayed)
+document.getElementById("played").innerText=gamesPlayed
+
 document.getElementById("characterMenu").style.display="none"
 document.getElementById("hud").style.display="block"
 
@@ -125,7 +139,6 @@ window.innerWidth/window.innerHeight,
 )
 
 renderer=new THREE.WebGLRenderer()
-
 renderer.setSize(window.innerWidth,window.innerHeight)
 
 document.body.appendChild(renderer.domElement)
@@ -214,9 +227,11 @@ new THREE.MeshBasicMaterial({color:0x00ffff})
 player.position.y=6
 scene.add(player)
 
-/* BOTS */
+/* BOT COUNT */
 
-for(let i=0;i<5;i++){
+let botCount = difficulty==="hard" ? 10 : 5
+
+for(let i=0;i<botCount;i++){
 
 let bot=new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
@@ -316,11 +331,20 @@ if(b.position.distanceTo(enemies[j].position)<8){
 scene.remove(enemies[j])
 enemies.splice(j,1)
 
+kills++
+document.getElementById("kills").innerText=kills
+
 scene.remove(b)
 bullets.splice(i,1)
 
 if(enemies.length===0){
+
+gamesWon++
+localStorage.setItem("won",gamesWon)
+document.getElementById("won").innerText=gamesWon
+
 endGame("GEWONNEN!")
+
 }
 
 break
@@ -449,6 +473,5 @@ document.getElementById("gameOver").style.display="block"
 }
 
 </script>
-
 </body>
 </html>
