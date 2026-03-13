@@ -58,7 +58,6 @@ button{
   <h1>Kies moeilijkheid</h1>
   <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
   <button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
-  <button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
 </div>
 
 <div id="characterMenu">
@@ -78,6 +77,7 @@ button{
   <button onclick="location.reload()">Opnieuw spelen</button>
 </div>
 
+<!-- Achtergrondmuziek -->
 <iframe id="bgMusic" width="0" height="0" 
   src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
   frameborder="0" allow="autoplay"
@@ -155,7 +155,11 @@ function startGame(){
       new THREE.BoxGeometry(60,80,60),
       new THREE.MeshBasicMaterial({color:0x555555})
     );
-    building.position.set((Math.random()-0.5)*800, 40, (Math.random()-0.5)*800);
+    building.position.set(
+      (Math.random()-0.5)*800,
+      40,
+      (Math.random()-0.5)*800
+    );
     scene.add(building);
   }
 
@@ -184,10 +188,7 @@ function startGame(){
   scene.add(player);
 
   /* BOT COUNT */
-  let botCount = 5;
-  if(difficulty === "hard") botCount = 10;
-  if(difficulty === "impossible") botCount = 18;
-
+  let botCount = difficulty==="hard" ? 10 : 5;
   for(let i=0;i<botCount;i++){
     let bot = new THREE.Mesh(
       new THREE.BoxGeometry(8,12,8),
@@ -201,13 +202,16 @@ function startGame(){
 
   /* CONTROLS */
   document.addEventListener("keydown", e => {
-    keys[e.key.toLowerCase()] = true; // pijltjes + zqsd
+    keys[e.key.toLowerCase()] = true; // pijltjes & zqsd ondersteund
     if(e.code==="Space") shoot();
   });
+
   document.addEventListener("keyup", e => {
     keys[e.key.toLowerCase()] = false;
   });
+
   document.addEventListener("click", shoot);
+
   document.addEventListener("mousemove", e => {
     yaw -= e.movementX*0.002;
   });
@@ -273,7 +277,7 @@ function animate(){
 
   /* SHOOT SYSTEM */
   shootTimer++;
-  if(difficulty === "easy"){
+  if(difficulty==="easy"){
     if(shootTimer>60){
       shootTimer=0;
       let bot = enemies[shootIndex % enemies.length];
@@ -281,14 +285,8 @@ function animate(){
       shootIndex++;
     }
   }
-  if(difficulty === "hard"){
+  if(difficulty==="hard"){
     if(shootTimer>120){
-      shootTimer=0;
-      for(let bot of enemies) shootBot(bot);
-    }
-  }
-  if(difficulty === "impossible"){
-    if(shootTimer>60){ // elke 60 frames = ~1 sec bij 60fps
       shootTimer=0;
       for(let bot of enemies) shootBot(bot);
     }
