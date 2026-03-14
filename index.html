@@ -58,6 +58,15 @@ border:3px solid white;
 padding:20px;
 }
 
+#crosshair{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:28px;
+pointer-events:none;
+}
+
 button{
 padding:12px;
 margin:5px;
@@ -76,6 +85,8 @@ cursor:pointer;
 </div>
 
 <div id="shopButton">SHOP</div>
+
+<div id="crosshair">+</div>
 
 <div id="difficultyMenu">
 <h1>Kies moeilijkheid</h1>
@@ -115,7 +126,7 @@ onclick="closeShop()">✖</div>
 </div>
 
 <iframe width="0" height="0"
-src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
+src="https://www.youtube.com/embed/TddO_JZ-RDo?autoplay=1&loop=1&playlist=TddO_JZ-RDo&controls=0"
 frameborder="0" allow="autoplay"></iframe>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -161,6 +172,12 @@ shopMenu.style.display="none"
 
 function buySkin(color,cost){
 
+if(ownedSkins.includes(color)){
+currentSkin=color
+alert("Skin geselecteerd!")
+return
+}
+
 if(totalCoins<cost){
 alert("Niet genoeg munten")
 return
@@ -193,6 +210,8 @@ gamesPlayed++
 localStorage.setItem("played",gamesPlayed)
 played.innerText=gamesPlayed
 
+document.getElementById("stats").style.display="none"
+
 characterMenu.style.display="none"
 hud.style.display="block"
 
@@ -204,7 +223,7 @@ camera=new THREE.PerspectiveCamera(
 75,
 window.innerWidth/window.innerHeight,
 0.1,
-2000
+5000
 )
 
 renderer=new THREE.WebGLRenderer()
@@ -213,16 +232,20 @@ document.body.appendChild(renderer.domElement)
 
 scene.add(new THREE.AmbientLight(0xffffff,1))
 
+/* SEA */
+
 let sea=new THREE.Mesh(
-new THREE.CircleGeometry(2000,64),
+new THREE.CircleGeometry(5000,64),
 new THREE.MeshBasicMaterial({color:0x1e90ff})
 )
 
 sea.rotation.x=-Math.PI/2
 scene.add(sea)
 
+/* ISLAND */
+
 let island=new THREE.Mesh(
-new THREE.CircleGeometry(600,64),
+new THREE.CircleGeometry(2000,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
 )
 
@@ -230,9 +253,28 @@ island.rotation.x=-Math.PI/2
 island.position.y=0.1
 scene.add(island)
 
+/* MOUNTAINS */
+
+for(let i=0;i<20;i++){
+
+let mountain=new THREE.Mesh(
+new THREE.ConeGeometry(80,200,6),
+new THREE.MeshLambertMaterial({color:0x666666})
+)
+
+mountain.position.set(
+(Math.random()-0.5)*3500,
+100,
+(Math.random()-0.5)*3500
+)
+
+scene.add(mountain)
+
+}
+
 /* TREES */
 
-for(let i=0;i<25;i++){
+for(let i=0;i<40;i++){
 
 let trunk=new THREE.Mesh(
 new THREE.CylinderGeometry(2,2,20),
@@ -244,7 +286,7 @@ new THREE.ConeGeometry(10,25,8),
 new THREE.MeshBasicMaterial({color:0x228B22})
 )
 
-trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900)
+trunk.position.set((Math.random()-0.5)*1800,10,(Math.random()-0.5)*1800)
 leaves.position.set(trunk.position.x,25,trunk.position.z)
 
 scene.add(trunk)
@@ -254,14 +296,14 @@ scene.add(leaves)
 
 /* ROCKS */
 
-for(let i=0;i<15;i++){
+for(let i=0;i<20;i++){
 
 let rock=new THREE.Mesh(
 new THREE.DodecahedronGeometry(15),
 new THREE.MeshBasicMaterial({color:0x777777})
 )
 
-rock.position.set((Math.random()-0.5)*900,8,(Math.random()-0.5)*900)
+rock.position.set((Math.random()-0.5)*1800,8,(Math.random()-0.5)*1800)
 
 scene.add(rock)
 
@@ -295,12 +337,9 @@ new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0xffffff})
 )
 
-bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
+bot.position.set((Math.random()-0.5)*1500,6,(Math.random()-0.5)*1500)
 
 bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
-bot.userData.freeze=0
-bot.userData.noShoot=0
-bot.userData.permaFreeze=false
 
 scene.add(bot)
 enemies.push(bot)
@@ -321,7 +360,7 @@ new THREE.MeshBasicMaterial({color:0xffff00})
 )
 
 coin.rotation.x=Math.PI/2
-coin.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
+coin.position.set((Math.random()-0.5)*1500,6,(Math.random()-0.5)*1500)
 
 scene.add(coin)
 coinObjects.push(coin)
@@ -333,12 +372,10 @@ coinObjects.push(coin)
 document.addEventListener("keydown",e=>{
 keys[e.key.toLowerCase()]=true
 if(e.code==="Space")shoot()
-if(e.key.toLowerCase()==="a")aPressed=true
 })
 
 document.addEventListener("keyup",e=>{
 keys[e.key.toLowerCase()]=false
-if(e.key.toLowerCase()==="a")aPressed=false
 })
 
 document.addEventListener("click",shoot)
@@ -396,160 +433,9 @@ if(keys["arrowdown"]||keys["s"])player.position.z+=4
 if(keys["arrowleft"]||keys["q"])player.position.x-=4
 if(keys["arrowright"]||keys["d"])player.position.x+=4
 
-if(player.position.length()>600)endGame("VERDRONKEN")
-
-for(let i=bullets.length-1;i>=0;i--){
-
-let b=bullets[i]
-b.position.add(b.userData.dir.clone().multiplyScalar(10))
-
-for(let j=enemies.length-1;j>=0;j--){
-
-let bot=enemies[j]
-
-if(b.position.distanceTo(bot.position)<8){
-
-explode(bot.position)
-
-if(aPressed){
-
-if(powerType==="ice")bot.userData.freeze=180
-if(powerType==="fire")bot.userData.noShoot=360
-if(powerType==="lightning")bot.userData.permaFreeze=true
-
-}
-
-scene.remove(bot)
-enemies.splice(j,1)
-
-kills++
-document.getElementById("kills").innerText=kills
-
-scene.remove(b)
-bullets.splice(i,1)
-
-if(enemies.length===0){
-
-gamesWon++
-localStorage.setItem("won",gamesWon)
-
-let reward=3
-if(difficulty==="hard")reward=5
-if(difficulty==="impossible")reward=7
-
-totalCoins+=reward+coins
-localStorage.setItem("coins",totalCoins)
-
-endGame("GEWONNEN!")
-
-}
-
-break
-
-}
-
-}
-
-}
-
-for(let i=coinObjects.length-1;i>=0;i--){
-
-let c=coinObjects[i]
-
-if(player.position.distanceTo(c.position)<10){
-
-scene.remove(c)
-coinObjects.splice(i,1)
-
-coins++
-document.getElementById("coins").innerText=coins
-
-}
-
-}
-
-for(let bot of enemies){
-
-if(bot.userData.permaFreeze)continue
-
-if(bot.userData.freeze>0){
-bot.userData.freeze--
-continue
-}
-
-bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5))
-
-if(Math.random()<0.02){
-
-bot.userData.moveDir=
-new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
-
-}
-
-}
-
-shootTimer++
-
-if(shootTimer>60){
-
-shootTimer=0
-
-let bot=enemies[shootIndex % enemies.length]
-
-if(bot && bot.userData.noShoot<=0)shootBot(bot)
-
-shootIndex++
-
-}
-
-for(let bot of enemies){
-if(bot.userData.noShoot>0)bot.userData.noShoot--
-}
-
-for(let i=enemyBullets.length-1;i>=0;i--){
-
-let b=enemyBullets[i]
-
-b.position.add(b.userData.dir.clone().multiplyScalar(8))
-
-if(b.position.distanceTo(player.position)<8){
-
-hits++
-hp.innerText=hits
-
-scene.remove(b)
-enemyBullets.splice(i,1)
-
-if(hits>=3)endGame("GAME OVER")
-
-}
-
-}
-
-camera.position.x=player.position.x-Math.sin(yaw)*40
-camera.position.z=player.position.z+Math.cos(yaw)*40
-camera.position.y=25
-
-camera.lookAt(player.position)
+if(player.position.length()>2000)endGame("VERDRONKEN")
 
 renderer.render(scene,camera)
-
-}
-
-function shootBot(bot){
-
-let dir=player.position.clone().sub(bot.position).normalize()
-
-let bullet=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000})
-)
-
-bullet.position.copy(bot.position)
-bullet.userData.dir=dir
-
-scene.add(bullet)
-enemyBullets.push(bullet)
 
 }
 
