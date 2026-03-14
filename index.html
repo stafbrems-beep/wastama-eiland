@@ -42,13 +42,6 @@ margin:5px;
 font-size:16px;
 cursor:pointer;
 }
-
-.healthbar{
-position:absolute;
-width:40px;
-height:6px;
-background:red;
-}
 </style>
 </head>
 
@@ -148,6 +141,7 @@ let sea=new THREE.Mesh(
 new THREE.CircleGeometry(2000,64),
 new THREE.MeshBasicMaterial({color:0x1e90ff})
 )
+
 sea.rotation.x=-Math.PI/2
 scene.add(sea)
 
@@ -164,7 +158,7 @@ scene.add(island)
 
 /* BUILDINGS */
 
-for(let i=0;i<12;i++){
+for(let i=0;i<10;i++){
 
 let building=new THREE.Mesh(
 new THREE.BoxGeometry(60,80,60),
@@ -177,33 +171,26 @@ scene.add(building)
 
 }
 
-/* BETERE BOMEN */
+/* TREES */
 
-for(let i=0;i<30;i++){
+for(let i=0;i<25;i++){
 
 let trunk=new THREE.Mesh(
 new THREE.CylinderGeometry(2,2,20),
 new THREE.MeshBasicMaterial({color:0x8b4513})
 )
 
-let leaves1=new THREE.Mesh(
+let leaves=new THREE.Mesh(
 new THREE.ConeGeometry(10,20),
 new THREE.MeshBasicMaterial({color:0x0f7a0f})
 )
 
-let leaves2=new THREE.Mesh(
-new THREE.ConeGeometry(8,18),
-new THREE.MeshBasicMaterial({color:0x0a5c0a})
-)
-
 trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900)
 
-leaves1.position.set(trunk.position.x,25,trunk.position.z)
-leaves2.position.set(trunk.position.x,35,trunk.position.z)
+leaves.position.set(trunk.position.x,25,trunk.position.z)
 
 scene.add(trunk)
-scene.add(leaves1)
-scene.add(leaves2)
+scene.add(leaves)
 
 }
 
@@ -236,14 +223,21 @@ new THREE.MeshBasicMaterial({color:0xffffff})
 
 bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
 
-bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
+bot.userData.moveSpeed=0.4
 
 /* BOT HEALTH */
 
-bot.userData.hp=2
-
-if(difficulty==="impossible" && Math.random()<0.3){
+if(difficulty==="easy"){
 bot.userData.hp=1
+}
+
+if(difficulty==="hard"){
+bot.userData.hp=2
+}
+
+if(difficulty==="impossible"){
+bot.userData.hp=2
+if(Math.random()<0.3) bot.userData.hp=1
 }
 
 enemies.push(bot)
@@ -277,7 +271,7 @@ function shoot(){
 let speed=10
 let damage=1
 
-if(power==="volt")speed=15
+if(power==="volt")speed=16
 if(power==="fire")damage=2
 
 let bullet=new THREE.Mesh(
@@ -292,13 +286,7 @@ bullet.userData.speed=speed
 bullet.userData.damage=damage
 
 scene.add(bullet)
-
 bullets.push(bullet)
-
-/* SOUND */
-
-let audio=new Audio("https://actions.google.com/sounds/v1/impacts/wood_plank_flicks.ogg")
-audio.play()
 
 }
 
@@ -314,7 +302,13 @@ if(keys["arrowdown"]||keys["s"])player.position.z+=4
 if(keys["arrowleft"]||keys["q"])player.position.x-=4
 if(keys["arrowright"]||keys["d"])player.position.x+=4
 
-/* BULLETS */
+/* WATER DEATH */
+
+if(player.position.length()>600){
+endGame("VERDRONKEN")
+}
+
+/* PLAYER BULLETS */
 
 for(let i=bullets.length-1;i>=0;i--){
 
@@ -330,8 +324,10 @@ if(b.position.distanceTo(bot.position)<8){
 
 bot.userData.hp-=b.userData.damage
 
+/* ICE POWER */
+
 if(power==="ice"){
-bot.userData.moveDir.multiplyScalar(0.3)
+bot.userData.moveSpeed=0.1
 }
 
 if(bot.userData.hp<=0){
@@ -342,7 +338,7 @@ scene.remove(bot)
 enemies.splice(j,1)
 
 kills++
-kills.innerText=kills
+document.getElementById("kills").innerText=kills
 
 }
 
@@ -356,17 +352,17 @@ break
 
 }
 
-/* BOTS */
+/* BOTS MOVE TOWARDS PLAYER */
 
 for(let bot of enemies){
 
 let dir=player.position.clone().sub(bot.position).normalize()
 
-bot.position.add(dir.multiplyScalar(0.4))
+bot.position.add(dir.multiplyScalar(bot.userData.moveSpeed))
 
 }
 
-/* SHOOT SYSTEM */
+/* BOT SHOOT */
 
 shootTimer++
 
@@ -375,7 +371,6 @@ if(difficulty==="easy"){
 if(shootTimer>60){
 
 shootTimer=0
-
 let bot=enemies[shootIndex%enemies.length]
 
 shootBot(bot)
@@ -386,25 +381,15 @@ shootIndex++
 
 }
 
-if(difficulty==="hard"){
+if(difficulty==="hard"||difficulty==="impossible"){
 
 if(shootTimer>120){
 
 shootTimer=0
 
-for(let bot of enemies)shootBot(bot)
-
+for(let bot of enemies){
+shootBot(bot)
 }
-
-}
-
-if(difficulty==="impossible"){
-
-if(shootTimer>60){
-
-shootTimer=0
-
-for(let bot of enemies)shootBot(bot)
 
 }
 
@@ -421,7 +406,7 @@ b.position.add(b.userData.dir.clone().multiplyScalar(8))
 if(b.position.distanceTo(player.position)<8){
 
 hits++
-hp.innerText=hits
+document.getElementById("hp").innerText=hits
 
 scene.remove(b)
 enemyBullets.splice(i,1)
@@ -429,26 +414,6 @@ enemyBullets.splice(i,1)
 if(hits>=3){
 endGame("GAME OVER")
 }
-
-}
-
-}
-
-/* EXPLOSIONS */
-
-for(let i=explosions.length-1;i>=0;i--){
-
-let p=explosions[i]
-
-p.position.add(p.userData.vel)
-
-p.userData.life--
-
-if(p.userData.life<=0){
-
-scene.remove(p)
-
-explosions.splice(i,1)
 
 }
 
@@ -464,12 +429,14 @@ camera.lookAt(player.position)
 
 renderer.render(scene,camera)
 
+/* WIN */
+
 if(enemies.length===0){
 
 gamesWon++
 localStorage.setItem("won",gamesWon)
 
-won.innerText=gamesWon
+document.getElementById("won").innerText=gamesWon
 
 endGame("GEWONNEN!")
 
@@ -487,7 +454,6 @@ new THREE.MeshBasicMaterial({color:0xff0000})
 )
 
 bullet.position.copy(bot.position)
-
 bullet.userData.dir=dir
 
 scene.add(bullet)
@@ -527,8 +493,8 @@ function endGame(text){
 
 gameActive=false
 
-endText.innerText=text
-gameOver.style.display="block"
+document.getElementById("endText").innerText=text
+document.getElementById("gameOver").style.display="block"
 
 }
 
