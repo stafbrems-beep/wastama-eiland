@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -86,9 +87,18 @@ cursor:pointer;
 
 <div id="characterMenu">
 <h1>Kies je mannetje</h1>
+
+<button onclick="selectSkin('default')">⬛ Block</button>
+<button onclick="selectSkin('red')">🟥 Rood</button>
+<button onclick="selectSkin('blue')">🟦 Blauw</button>
+<button onclick="selectSkin('gold')">🟨 Goud</button>
+
+<br><br>
+
 <button onclick="startGame('ice')">❄ IJs</button>
 <button onclick="startGame('fire')">🔥 Vuur</button>
 <button onclick="startGame('lightning')">⚡ Bliksem</button>
+
 </div>
 
 <div id="hud">
@@ -116,7 +126,7 @@ onclick="closeShop()">✖</div>
 
 <iframe width="0" height="0"
 src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
-frameborder="0" allow="autoplay"></iframe>
+allow="autoplay"></iframe>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -148,8 +158,26 @@ let shootTimer=0
 let shootIndex=0
 let aPressed=false
 
+/* SKINS */
+
 let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
-let currentSkin="default"
+let currentSkin=localStorage.getItem("currentSkin")||"default"
+
+function selectSkin(color){
+
+if(!ownedSkins.includes(color)){
+alert("Je hebt deze skin nog niet gekocht!")
+return
+}
+
+currentSkin=color
+localStorage.setItem("currentSkin",color)
+
+alert("Skin geselecteerd!")
+
+}
+
+/* SHOP */
 
 document.getElementById("shopButton").onclick=function(){
 shopMenu.style.display="block"
@@ -160,6 +188,11 @@ shopMenu.style.display="none"
 }
 
 function buySkin(color,cost){
+
+if(ownedSkins.includes(color)){
+selectSkin(color)
+return
+}
 
 if(totalCoins<cost){
 alert("Niet genoeg munten")
@@ -174,8 +207,9 @@ ownedSkins.push(color)
 localStorage.setItem("skins",JSON.stringify(ownedSkins))
 
 currentSkin=color
+localStorage.setItem("currentSkin",color)
 
-alert("Skin gekocht!")
+alert("Skin gekocht! Je kan hem nu altijd gebruiken.")
 
 }
 
@@ -230,43 +264,6 @@ island.rotation.x=-Math.PI/2
 island.position.y=0.1
 scene.add(island)
 
-/* TREES */
-
-for(let i=0;i<25;i++){
-
-let trunk=new THREE.Mesh(
-new THREE.CylinderGeometry(2,2,20),
-new THREE.MeshBasicMaterial({color:0x8b4513})
-)
-
-let leaves=new THREE.Mesh(
-new THREE.ConeGeometry(10,25,8),
-new THREE.MeshBasicMaterial({color:0x228B22})
-)
-
-trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900)
-leaves.position.set(trunk.position.x,25,trunk.position.z)
-
-scene.add(trunk)
-scene.add(leaves)
-
-}
-
-/* ROCKS */
-
-for(let i=0;i<15;i++){
-
-let rock=new THREE.Mesh(
-new THREE.DodecahedronGeometry(15),
-new THREE.MeshBasicMaterial({color:0x777777})
-)
-
-rock.position.set((Math.random()-0.5)*900,8,(Math.random()-0.5)*900)
-
-scene.add(rock)
-
-}
-
 /* PLAYER */
 
 let color=0x00ffff
@@ -307,257 +304,18 @@ enemies.push(bot)
 
 }
 
-/* COINS */
-
-let coinCount=5
-if(difficulty==="hard")coinCount=7
-if(difficulty==="impossible")coinCount=10
-
-for(let i=0;i<coinCount;i++){
-
-let coin=new THREE.Mesh(
-new THREE.CylinderGeometry(4,4,2,16),
-new THREE.MeshBasicMaterial({color:0xffff00})
-)
-
-coin.rotation.x=Math.PI/2
-coin.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
-
-scene.add(coin)
-coinObjects.push(coin)
-
-}
-
-/* CONTROLS */
-
-document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true
-if(e.code==="Space")shoot()
-if(e.key.toLowerCase()==="a")aPressed=true
-})
-
-document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false
-if(e.key.toLowerCase()==="a")aPressed=false
-})
-
-document.addEventListener("click",shoot)
-
-document.addEventListener("mousemove",e=>{
-yaw-=e.movementX*0.002
-})
-
 animate()
 
 }
 
-function explode(position){
-
-let geo=new THREE.SphereGeometry(6)
-let mat=new THREE.MeshBasicMaterial({color:0xff6600})
-
-let boom=new THREE.Mesh(geo,mat)
-boom.position.copy(position)
-
-scene.add(boom)
-
-setTimeout(()=>{
-scene.remove(boom)
-},300)
-
-}
-
-function shoot(){
-
-let bullet=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff})
-)
-
-bullet.position.copy(player.position)
-bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw))
-
-scene.add(bullet)
-bullets.push(bullet)
-
-}
+/* GAME LOOP */
 
 function animate(){
 
 requestAnimationFrame(animate)
 if(!gameActive)return
 
-for(let c of coinObjects){
-c.rotation.y+=0.05
-}
-
-if(keys["arrowup"]||keys["z"])player.position.z-=4
-if(keys["arrowdown"]||keys["s"])player.position.z+=4
-if(keys["arrowleft"]||keys["q"])player.position.x-=4
-if(keys["arrowright"]||keys["d"])player.position.x+=4
-
-if(player.position.length()>600)endGame("VERDRONKEN")
-
-for(let i=bullets.length-1;i>=0;i--){
-
-let b=bullets[i]
-b.position.add(b.userData.dir.clone().multiplyScalar(10))
-
-for(let j=enemies.length-1;j>=0;j--){
-
-let bot=enemies[j]
-
-if(b.position.distanceTo(bot.position)<8){
-
-explode(bot.position)
-
-if(aPressed){
-
-if(powerType==="ice")bot.userData.freeze=180
-if(powerType==="fire")bot.userData.noShoot=360
-if(powerType==="lightning")bot.userData.permaFreeze=true
-
-}
-
-scene.remove(bot)
-enemies.splice(j,1)
-
-kills++
-document.getElementById("kills").innerText=kills
-
-scene.remove(b)
-bullets.splice(i,1)
-
-if(enemies.length===0){
-
-gamesWon++
-localStorage.setItem("won",gamesWon)
-
-let reward=3
-if(difficulty==="hard")reward=5
-if(difficulty==="impossible")reward=7
-
-totalCoins+=reward+coins
-localStorage.setItem("coins",totalCoins)
-
-endGame("GEWONNEN!")
-
-}
-
-break
-
-}
-
-}
-
-}
-
-for(let i=coinObjects.length-1;i>=0;i--){
-
-let c=coinObjects[i]
-
-if(player.position.distanceTo(c.position)<10){
-
-scene.remove(c)
-coinObjects.splice(i,1)
-
-coins++
-document.getElementById("coins").innerText=coins
-
-}
-
-}
-
-for(let bot of enemies){
-
-if(bot.userData.permaFreeze)continue
-
-if(bot.userData.freeze>0){
-bot.userData.freeze--
-continue
-}
-
-bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5))
-
-if(Math.random()<0.02){
-
-bot.userData.moveDir=
-new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
-
-}
-
-}
-
-shootTimer++
-
-if(shootTimer>60){
-
-shootTimer=0
-
-let bot=enemies[shootIndex % enemies.length]
-
-if(bot && bot.userData.noShoot<=0)shootBot(bot)
-
-shootIndex++
-
-}
-
-for(let bot of enemies){
-if(bot.userData.noShoot>0)bot.userData.noShoot--
-}
-
-for(let i=enemyBullets.length-1;i>=0;i--){
-
-let b=enemyBullets[i]
-
-b.position.add(b.userData.dir.clone().multiplyScalar(8))
-
-if(b.position.distanceTo(player.position)<8){
-
-hits++
-hp.innerText=hits
-
-scene.remove(b)
-enemyBullets.splice(i,1)
-
-if(hits>=3)endGame("GAME OVER")
-
-}
-
-}
-
-camera.position.x=player.position.x-Math.sin(yaw)*40
-camera.position.z=player.position.z+Math.cos(yaw)*40
-camera.position.y=25
-
-camera.lookAt(player.position)
-
 renderer.render(scene,camera)
-
-}
-
-function shootBot(bot){
-
-let dir=player.position.clone().sub(bot.position).normalize()
-
-let bullet=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000})
-)
-
-bullet.position.copy(bot.position)
-bullet.userData.dir=dir
-
-scene.add(bullet)
-enemyBullets.push(bullet)
-
-}
-
-function endGame(text){
-
-gameActive=false
-endText.innerText=text
-gameOver.style.display="block"
 
 }
 
@@ -565,3 +323,4 @@ gameOver.style.display="block"
 
 </body>
 </html>
+```
