@@ -87,18 +87,9 @@ cursor:pointer;
 
 <div id="characterMenu">
 <h1>Kies je mannetje</h1>
-
-<button onclick="selectSkin('default')">⬛ Block</button>
-<button onclick="selectSkin('red')">🟥 Rood</button>
-<button onclick="selectSkin('blue')">🟦 Blauw</button>
-<button onclick="selectSkin('gold')">🟨 Goud</button>
-
-<br><br>
-
 <button onclick="startGame('ice')">❄ IJs</button>
 <button onclick="startGame('fire')">🔥 Vuur</button>
 <button onclick="startGame('lightning')">⚡ Bliksem</button>
-
 </div>
 
 <div id="hud">
@@ -126,7 +117,7 @@ onclick="closeShop()">✖</div>
 
 <iframe width="0" height="0"
 src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
-allow="autoplay"></iframe>
+frameborder="0" allow="autoplay"></iframe>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -163,21 +154,7 @@ let aPressed=false
 let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
 let currentSkin=localStorage.getItem("currentSkin")||"default"
 
-function selectSkin(color){
-
-if(!ownedSkins.includes(color)){
-alert("Je hebt deze skin nog niet gekocht!")
-return
-}
-
-currentSkin=color
-localStorage.setItem("currentSkin",color)
-
-alert("Skin geselecteerd!")
-
-}
-
-/* SHOP */
+/* SHOP BUTTON */
 
 document.getElementById("shopButton").onclick=function(){
 shopMenu.style.display="block"
@@ -187,10 +164,14 @@ function closeShop(){
 shopMenu.style.display="none"
 }
 
+/* SHOP SYSTEM */
+
 function buySkin(color,cost){
 
 if(ownedSkins.includes(color)){
-selectSkin(color)
+currentSkin=color
+localStorage.setItem("currentSkin",color)
+alert("Skin geselecteerd!")
 return
 }
 
@@ -307,8 +288,6 @@ enemies.push(bot)
 animate()
 
 }
-
-/* GAME LOOP */
 
 function animate(){
 
