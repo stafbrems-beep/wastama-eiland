@@ -2,23 +2,63 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA EILAND - Verbeterde Skins</title>
+<title>WASTAMA EILAND</title>
 
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
+
 #difficultyMenu,#characterMenu,#gameOver{
-position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);text-align:center;
+position:absolute;
+top:40%;
+left:50%;
+transform:translate(-50%,-50%);
+text-align:center;
 }
+
 #characterMenu{display:none;}
-#hud{position:absolute;top:60px;left:20px;display:none;}
-#stats{position:absolute;top:10px;left:20px;}
-#shopButton{position:absolute;top:10px;right:20px;background:#444;padding:10px;cursor:pointer;}
-#shopMenu{
-display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-width:600px;height:400px;background:#111;border:3px solid white;padding:20px;
+
+#hud{
+position:absolute;
+top:60px;
+left:20px;
+display:none;
 }
-button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
-.selected{background:gold;color:black;}
+
+#stats{
+position:absolute;
+top:10px;
+left:20px;
+}
+
+#shopButton{
+position:absolute;
+top:10px;
+right:20px;
+background:#444;
+padding:10px;
+cursor:pointer;
+}
+
+#shopMenu{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:650px;
+height:500px;
+background:#111;
+border:3px solid white;
+padding:20px;
+overflow:auto;
+}
+
+button{
+padding:12px;
+margin:5px;
+font-size:16px;
+cursor:pointer;
+}
 </style>
 </head>
 
@@ -40,7 +80,7 @@ button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
 </div>
 
 <div id="characterMenu">
-<h1>Kies je mannetje</h1>
+<h1>Kies je power</h1>
 <button onclick="startGame('ice')">❄ IJs</button>
 <button onclick="startGame('fire')">🔥 Vuur</button>
 <button onclick="startGame('lightning')">⚡ Bliksem</button>
@@ -58,166 +98,214 @@ button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
 </div>
 
 <div id="shopMenu">
-<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px" onclick="closeShop()">✖</div>
-<h2>SHOP</h2>
+<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
+onclick="closeShop()">✖</div>
 
-<button onclick="buySkin('red',10)">🔥 Rode kubus - 10 munten</button>
-<button onclick="buySkin('blue',10)">💧 Blauwe cilinder - 10 munten</button>
-<button onclick="buySkin('gold',20)">✨ Gouden kegel - 20 munten</button>
-<button onclick="buySkin('purple',15)">🌌 Paarse bol - 15 munten</button>
-<button onclick="buySkin('neon',25)">⚡ Neon ster - 25 munten</button>
-<button onclick="buySkin('iceblock',15)">❄ IJsblok - 15 munten</button>
-<button onclick="buySkin('flame',25)">🔥 Vuurvlam - 25 munten</button>
+<h2>SHOP</h2>
+<div id="skinButtons"></div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 
-// ===== DATA =====
-let gamesPlayed=parseInt(localStorage.getItem("played"))||0;
-let gamesWon=parseInt(localStorage.getItem("won"))||0;
-let totalCoins=parseInt(localStorage.getItem("coins"))||0;
+let gamesPlayed=parseInt(localStorage.getItem("played"))||0
+let gamesWon=parseInt(localStorage.getItem("won"))||0
+let totalCoins=parseInt(localStorage.getItem("coins"))||0
 
-played.innerText=gamesPlayed;
-won.innerText=gamesWon;
-coinsTotal.innerText=totalCoins;
+played.innerText=gamesPlayed
+won.innerText=gamesWon
+coinsTotal.innerText=totalCoins
 
-let difficulty="easy";
-let powerType="ice";
+let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
+let currentSkin=localStorage.getItem("currentSkin")||"default"
 
-let scene,camera,renderer,player;
-let enemies=[],bullets=[],enemyBullets=[],coinObjects=[];
-let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false,shootTimer=0,shootIndex=0,aPressed=false;
+let skinsData=[
 
-// ===== SKINS FIX =====
-let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"];
-let currentSkin=localStorage.getItem("selectedSkin")||"default";
+{name:"Default blok",id:"default",geom:"box",color:0x00ffff,cost:0},
 
-// ===== SHOP =====
-shopButton.onclick=function(){
-    shopMenu.style.display="block";
-    updateShop();
-}
+{name:"Rode kubus",id:"red",geom:"box",color:0xff0000,cost:10},
 
-function closeShop(){shopMenu.style.display="none";}
+{name:"Blauwe cilinder",id:"blue",geom:"cylinder",color:0x0066ff,cost:10},
 
-function buySkin(skin,cost){
+{name:"Gouden kegel",id:"gold",geom:"cone",color:0xffcc00,cost:20},
 
-    if(ownedSkins.includes(skin)){
-        currentSkin=skin;
-        localStorage.setItem("selectedSkin",skin);
-        updateShop();
-        return;
-    }
+{name:"Paarse bol",id:"purple",geom:"sphere",color:0x800080,cost:15},
 
-    if(totalCoins<cost){
-        alert("Niet genoeg munten");
-        return;
-    }
+{name:"Neon ster",id:"star",geom:"ico",color:0x00ffea,cost:25},
 
-    totalCoins-=cost;
-    coinsTotal.innerText=totalCoins;
-    localStorage.setItem("coins",totalCoins);
+{name:"Diamant",id:"diamond",geom:"oct",color:0x00ffff,cost:40},
 
-    ownedSkins.push(skin);
-    localStorage.setItem("skins",JSON.stringify(ownedSkins));
+{name:"Kristal",id:"crystal",geom:"tetra",color:0x66ffff,cost:50},
 
-    currentSkin=skin;
-    localStorage.setItem("selectedSkin",skin);
+{name:"Kroon",id:"crown",geom:"torus",color:0xffdd00,cost:80},
 
-    updateShop();
-}
+{name:"Alien",id:"alien",geom:"dodeca",color:0x00ff00,cost:120},
 
-// 🔥 KNOPPEN UPDATEN
+{name:"Super ster",id:"superstar",geom:"ico",color:0xffff00,cost:200}
+
+]
+
 function updateShop(){
 
-    const data=[
-        {skin:"red",cost:10,text:"🔥 Rode kubus"},
-        {skin:"blue",cost:10,text:"💧 Blauwe cilinder"},
-        {skin:"gold",cost:20,text:"✨ Gouden kegel"},
-        {skin:"purple",cost:15,text:"🌌 Paarse bol"},
-        {skin:"neon",cost:25,text:"⚡ Neon ster"},
-        {skin:"iceblock",cost:15,text:"❄ IJsblok"},
-        {skin:"flame",cost:25,text:"🔥 Vuurvlam"}
-    ];
+let container=document.getElementById("skinButtons")
+container.innerHTML=""
 
-    data.forEach(d=>{
-        let btn=document.querySelector(`button[onclick="buySkin('${d.skin}',${d.cost})"]`);
-        if(!btn)return;
+for(let s of skinsData){
 
-        if(ownedSkins.includes(d.skin)){
-            btn.innerText=d.text;
+let btn=document.createElement("button")
 
-            if(currentSkin===d.skin){
-                btn.classList.add("selected");
-            }else{
-                btn.classList.remove("selected");
-            }
-        }else{
-            btn.innerText=d.text+" - "+d.cost+" munten";
-        }
-    });
+if(!ownedSkins.includes(s.id) && s.cost>0){
+
+btn.innerText=s.name+" - "+s.cost+" munten"
+btn.onclick=()=>buySkin(s.id,s.cost)
+
+}else{
+
+btn.innerText="Gebruik "+s.name
+btn.onclick=()=>{
+currentSkin=s.id
+localStorage.setItem("currentSkin",s.id)
+alert(s.name+" geselecteerd!")
 }
 
-// ===== GAME (ONAANGEPAST) =====
+}
+
+container.appendChild(btn)
+
+}
+
+}
+
+updateShop()
+
+shopButton.onclick=function(){shopMenu.style.display="block"}
+
+function closeShop(){shopMenu.style.display="none"}
+
+function buySkin(id,cost){
+
+if(totalCoins<cost){
+alert("Niet genoeg munten")
+return
+}
+
+totalCoins-=cost
+coinsTotal.innerText=totalCoins
+localStorage.setItem("coins",totalCoins)
+
+ownedSkins.push(id)
+localStorage.setItem("skins",JSON.stringify(ownedSkins))
+
+currentSkin=id
+localStorage.setItem("currentSkin",id)
+
+alert("Skin gekocht!")
+
+updateShop()
+
+}
+
+let difficulty="easy"
+let powerType="ice"
+
+let scene,camera,renderer,player
+let enemies=[],bullets=[],enemyBullets=[]
+let coinObjects=[]
+
+let keys={}
+let yaw=0
+let hits=0
+let kills=0
+let coins=0
+let gameActive=false
+
 function chooseDifficulty(mode){
-difficulty=mode;
-difficultyMenu.style.display="none";
-characterMenu.style.display="block";
+difficulty=mode
+difficultyMenu.style.display="none"
+characterMenu.style.display="block"
 }
 
 function startGame(type){
 
-powerType=type;
-gamesPlayed++;
-localStorage.setItem("played",gamesPlayed);
-played.innerText=gamesPlayed;
+powerType=type
 
-characterMenu.style.display="none";
-hud.style.display="block";
-gameActive=true;
+gamesPlayed++
+localStorage.setItem("played",gamesPlayed)
+played.innerText=gamesPlayed
 
-scene=new THREE.Scene();
-camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
-renderer=new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth,window.innerHeight);
-document.body.appendChild(renderer.domElement);
+characterMenu.style.display="none"
+hud.style.display="block"
 
-scene.add(new THREE.AmbientLight(0xffffff,1));
+gameActive=true
 
-// ===== PLAYER (ALLEEN FIX: check of skin gekocht is) =====
-if(!ownedSkins.includes(currentSkin)){
-    currentSkin="default";
+scene=new THREE.Scene()
+
+camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000)
+
+renderer=new THREE.WebGLRenderer()
+renderer.setSize(window.innerWidth,window.innerHeight)
+document.body.appendChild(renderer.domElement)
+
+scene.add(new THREE.AmbientLight(0xffffff,1))
+
+let sea=new THREE.Mesh(
+new THREE.CircleGeometry(2000,64),
+new THREE.MeshBasicMaterial({color:0x1e90ff})
+)
+
+sea.rotation.x=-Math.PI/2
+scene.add(sea)
+
+let island=new THREE.Mesh(
+new THREE.CircleGeometry(600,64),
+new THREE.MeshBasicMaterial({color:0x228B22})
+)
+
+island.rotation.x=-Math.PI/2
+island.position.y=0.1
+scene.add(island)
+
+let s=skinsData.find(x=>x.id===currentSkin)
+
+let geom
+
+switch(s.geom){
+
+case "box": geom=new THREE.BoxGeometry(8,12,8);break
+case "cylinder": geom=new THREE.CylinderGeometry(6,6,12,16);break
+case "cone": geom=new THREE.ConeGeometry(8,16,16);break
+case "sphere": geom=new THREE.SphereGeometry(7,16,16);break
+case "ico": geom=new THREE.IcosahedronGeometry(8);break
+case "oct": geom=new THREE.OctahedronGeometry(8);break
+case "tetra": geom=new THREE.TetrahedronGeometry(8);break
+case "torus": geom=new THREE.TorusGeometry(6,2,16,100);break
+case "dodeca": geom=new THREE.DodecahedronGeometry(8);break
+
 }
 
-let colorMap={
-"red":0xff0000,"blue":0x0066ff,"gold":0xffcc00,
-"purple":0x800080,"neon":0x00ffea,"iceblock":0x99ccff,
-"flame":0xff6600,"default":0x00ffff
-};
+player=new THREE.Mesh(
+geom,
+new THREE.MeshBasicMaterial({color:s.color})
+)
 
-let geometry;
-switch(currentSkin){
-case "red":geometry=new THREE.BoxGeometry(8,12,8);break;
-case "blue":geometry=new THREE.CylinderGeometry(6,6,12,16);break;
-case "gold":geometry=new THREE.ConeGeometry(8,16,16);break;
-case "purple":geometry=new THREE.SphereGeometry(7,16,16);break;
-case "neon":geometry=new THREE.IcosahedronGeometry(8,0);break;
-case "iceblock":geometry=new THREE.BoxGeometry(8,12,8);break;
-case "flame":geometry=new THREE.ConeGeometry(6,16,8);break;
-default:geometry=new THREE.BoxGeometry(8,12,8);
+player.position.y=6
+scene.add(player)
+
+animate()
+
 }
 
-player=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:colorMap[currentSkin]}));
-player.position.y=(geometry.parameters.height||12)/2;
-scene.add(player);
+function animate(){
 
-// ===== REST = EXACT HETZELFDE =====
-animate();
+requestAnimationFrame(animate)
+
+if(!gameActive)return
+
+renderer.render(scene,camera)
+
 }
-
-// (ALLE ANDERE FUNCTIES ZIJN 100% HETZELFDE ALS JOUW CODE)
 
 </script>
 
