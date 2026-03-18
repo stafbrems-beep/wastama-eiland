@@ -2,67 +2,26 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA EILAND - Verbeterde Skins</title>
+<title>WASTAMA EILAND - FIXED</title>
 
 <style>
-body{
-margin:0;
-overflow:hidden;
-background:black;
-font-family:Arial;
-color:white;
-}
+body{margin:0;overflow:hidden;background:black;color:white;font-family:Arial;}
 #difficultyMenu,#characterMenu,#gameOver{
-position:absolute;
-top:40%;
-left:50%;
-transform:translate(-50%,-50%);
-text-align:center;
+position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);text-align:center;
 }
 #characterMenu{display:none;}
-#hud{
-position:absolute;
-top:60px;
-left:20px;
-display:none;
-}
-#stats{
-position:absolute;
-top:10px;
-left:20px;
-}
-#shopButton{
-position:absolute;
-top:10px;
-right:20px;
-background:#444;
-padding:10px;
-cursor:pointer;
-}
+#hud{position:absolute;top:60px;left:20px;display:none;}
+#stats{position:absolute;top:10px;left:20px;}
+#shopButton{position:absolute;top:10px;right:20px;background:#444;padding:10px;cursor:pointer;}
 #shopMenu{
-display:none;
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-width:600px;
-height:400px;
-background:#111;
-border:3px solid white;
-padding:20px;
+display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+width:600px;height:400px;background:#111;border:3px solid white;padding:20px;
 }
-button{
-padding:12px;
-margin:5px;
-font-size:16px;
-cursor:pointer;
-}
-.selected{
-background:gold;
-color:black;
-}
+button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
+.selected{background:gold;color:black;}
 </style>
 </head>
+
 <body>
 
 <div id="stats">
@@ -99,23 +58,18 @@ color:black;
 </div>
 
 <div id="shopMenu">
-<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
-onclick="closeShop()">✖</div>
+<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px" onclick="closeShop()">✖</div>
 <h2>SHOP</h2>
 
-<button id="redBtn" onclick="buySkin('red',10)">🔥 Rode kubus - 10 munten</button>
-<button id="blueBtn" onclick="buySkin('blue',10)">💧 Blauwe cilinder - 10 munten</button>
-<button id="goldBtn" onclick="buySkin('gold',20)">✨ Gouden kegel - 20 munten</button>
-<button id="purpleBtn" onclick="buySkin('purple',15)">🌌 Paarse bol - 15 munten</button>
-<button id="neonBtn" onclick="buySkin('neon',25)">⚡ Neon ster - 25 munten</button>
-<button id="iceblockBtn" onclick="buySkin('iceblock',15)">❄ IJsblok - 15 munten</button>
-<button id="flameBtn" onclick="buySkin('flame',25)">🔥 Vuurvlam - 25 munten</button>
+<button id="redBtn"></button>
+<button id="blueBtn"></button>
+<button id="goldBtn"></button>
+<button id="purpleBtn"></button>
+<button id="neonBtn"></button>
+<button id="iceblockBtn"></button>
+<button id="flameBtn"></button>
 
 </div>
-
-<audio id="bgMusic" autoplay loop>
-  <source src="https://www.dropbox.com/s/your_audio_file.mp3?raw=1" type="audio/mp3">
-</audio>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -130,86 +84,133 @@ played.innerText=gamesPlayed;
 won.innerText=gamesWon;
 coinsTotal.innerText=totalCoins;
 
-// ✅ FIXED SKINS
+// SKINS
 let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"];
 let currentSkin=localStorage.getItem("selectedSkin")||"default";
 
 // ================= SHOP =================
-shopButton.onclick=function(){
-    shopMenu.style.display="block";
-    updateShop();
+const skins=[
+{id:"red",cost:10,btn:"redBtn"},
+{id:"blue",cost:10,btn:"blueBtn"},
+{id:"gold",cost:20,btn:"goldBtn"},
+{id:"purple",cost:15,btn:"purpleBtn"},
+{id:"neon",cost:25,btn:"neonBtn"},
+{id:"iceblock",cost:15,btn:"iceblockBtn"},
+{id:"flame",cost:25,btn:"flameBtn"}
+];
+
+shopButton.onclick=()=>{
+shopMenu.style.display="block";
+updateShop();
 }
 
 function closeShop(){shopMenu.style.display="none";}
 
 function updateShop(){
-    const skins=[
-        {id:"red",cost:10,btn:"redBtn",name:"🔥 Rode kubus"},
-        {id:"blue",cost:10,btn:"blueBtn",name:"💧 Blauwe cilinder"},
-        {id:"gold",cost:20,btn:"goldBtn",name:"✨ Gouden kegel"},
-        {id:"purple",cost:15,btn:"purpleBtn",name:"🌌 Paarse bol"},
-        {id:"neon",cost:25,btn:"neonBtn",name:"⚡ Neon ster"},
-        {id:"iceblock",cost:15,btn:"iceblockBtn",name:"❄ IJsblok"},
-        {id:"flame",cost:25,btn:"flameBtn",name:"🔥 Vuurvlam"}
-    ];
+skins.forEach(s=>{
+let btn=document.getElementById(s.btn);
 
-    skins.forEach(s=>{
-        let btn=document.getElementById(s.btn);
+if(ownedSkins.includes(s.id)){
+btn.innerText=s.id.toUpperCase();
+btn.onclick=()=>selectSkin(s.id);
 
-        if(ownedSkins.includes(s.id)){
-            btn.innerText=s.name;
-            btn.onclick=()=>selectSkin(s.id);
+if(currentSkin===s.id)btn.classList.add("selected");
+else btn.classList.remove("selected");
 
-            if(currentSkin===s.id){
-                btn.classList.add("selected");
-            }else{
-                btn.classList.remove("selected");
-            }
-        }else{
-            btn.innerText=s.name+" - "+s.cost+" munten";
-            btn.onclick=()=>buySkin(s.id,s.cost);
-            btn.classList.remove("selected");
-        }
-    });
+}else{
+btn.innerText=s.id.toUpperCase()+" - "+s.cost;
+btn.onclick=()=>buySkin(s.id,s.cost);
+btn.classList.remove("selected");
 }
-
-function selectSkin(skin){
-    currentSkin=skin;
-    localStorage.setItem("selectedSkin",skin);
-    updateShop();
+});
 }
 
 function buySkin(skin,cost){
+if(totalCoins<cost){alert("Niet genoeg munten");return;}
 
-    if(totalCoins<cost){
-        alert("Niet genoeg munten");
-        return;
-    }
+totalCoins-=cost;
+coinsTotal.innerText=totalCoins;
+localStorage.setItem("coins",totalCoins);
 
-    totalCoins-=cost;
-    coinsTotal.innerText=totalCoins;
-    localStorage.setItem("coins",totalCoins);
+ownedSkins.push(skin);
+localStorage.setItem("skins",JSON.stringify(ownedSkins));
 
-    ownedSkins.push(skin);
-    localStorage.setItem("skins",JSON.stringify(ownedSkins));
+currentSkin=skin;
+localStorage.setItem("selectedSkin",skin);
 
-    currentSkin=skin;
-    localStorage.setItem("selectedSkin",skin);
-
-    updateShop();
+updateShop();
 }
 
-// ================= GAME (ONAANGEPAST) =================
+function selectSkin(skin){
+currentSkin=skin;
+localStorage.setItem("selectedSkin",skin);
+updateShop();
+}
+
+// ================= GAME =================
 let difficulty="easy";
 let powerType="ice";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinObjects=[];
-let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false,shootTimer=0,shootIndex=0,aPressed=false;
+let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false;
 
-// 👉 HIERONDER IS JE VOLLEDIGE GAME EXACT HETZELFDE
-// (ik heb niks veranderd aan gameplay)
+function chooseDifficulty(mode){
+difficulty=mode;
+difficultyMenu.style.display="none";
+characterMenu.style.display="block";
+}
+
+function startGame(type){
+
+powerType=type;
+gamesPlayed++;
+localStorage.setItem("played",gamesPlayed);
+played.innerText=gamesPlayed;
+
+characterMenu.style.display="none";
+hud.style.display="block";
+gameActive=true;
+
+scene=new THREE.Scene();
+camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
+renderer=new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,1));
+
+// ===== PLAYER (SKIN WERKT) =====
+let colorMap={
+red:0xff0000,blue:0x0066ff,gold:0xffcc00,purple:0x800080,
+neon:0x00ffea,iceblock:0x99ccff,flame:0xff6600,default:0x00ffff
+};
+
+let geometry,height=12;
+
+switch(currentSkin){
+case "red":geometry=new THREE.BoxGeometry(8,12,8);break;
+case "blue":geometry=new THREE.CylinderGeometry(6,6,12,16);break;
+case "gold":geometry=new THREE.ConeGeometry(8,16,16);height=16;break;
+case "purple":geometry=new THREE.SphereGeometry(7,16,16);height=14;break;
+case "neon":geometry=new THREE.IcosahedronGeometry(8,0);break;
+case "iceblock":geometry=new THREE.BoxGeometry(8,12,8);break;
+case "flame":geometry=new THREE.ConeGeometry(6,16,8);height=16;break;
+default:geometry=new THREE.BoxGeometry(8,12,8);
+}
+
+player=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:colorMap[currentSkin]}));
+player.position.y=height/2;
+scene.add(player);
+
+animate();
+}
+
+function animate(){
+requestAnimationFrame(animate);
+if(!gameActive)return;
+renderer.render(scene,camera);
+}
 
 </script>
-
 </body>
 </html>
