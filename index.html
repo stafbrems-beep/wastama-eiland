@@ -5,7 +5,13 @@
 <title>WASTAMA EILAND</title>
 
 <style>
-body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
+body{
+margin:0;
+overflow:hidden;
+background:black;
+font-family:Arial;
+color:white;
+}
 
 #difficultyMenu,#characterMenu,#gameOver{
 position:absolute;
@@ -45,12 +51,20 @@ position:absolute;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
-width:650px;
-height:500px;
+width:600px;
+height:400px;
 background:#111;
 border:3px solid white;
 padding:20px;
-overflow:auto;
+}
+
+#crosshair{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:28px;
+pointer-events:none;
 }
 
 button{
@@ -72,6 +86,8 @@ cursor:pointer;
 
 <div id="shopButton">SHOP</div>
 
+<div id="crosshair">+</div>
+
 <div id="difficultyMenu">
 <h1>Kies moeilijkheid</h1>
 <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
@@ -80,7 +96,7 @@ cursor:pointer;
 </div>
 
 <div id="characterMenu">
-<h1>Kies je power</h1>
+<h1>Kies je mannetje</h1>
 <button onclick="startGame('ice')">❄ IJs</button>
 <button onclick="startGame('fire')">🔥 Vuur</button>
 <button onclick="startGame('lightning')">⚡ Bliksem</button>
@@ -102,9 +118,16 @@ cursor:pointer;
 onclick="closeShop()">✖</div>
 
 <h2>SHOP</h2>
-<div id="skinButtons"></div>
+
+<button onclick="buySkin('red',10)">Rode skin - 10 munten</button>
+<button onclick="buySkin('blue',10)">Blauwe skin - 10 munten</button>
+<button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
 
 </div>
+
+<iframe width="0" height="0"
+src="https://www.youtube.com/embed/TddO_JZ-RDo?autoplay=1&loop=1&playlist=TddO_JZ-RDo&controls=0"
+frameborder="0" allow="autoplay"></iframe>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -117,95 +140,6 @@ let totalCoins=parseInt(localStorage.getItem("coins"))||0
 played.innerText=gamesPlayed
 won.innerText=gamesWon
 coinsTotal.innerText=totalCoins
-
-let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
-let currentSkin=localStorage.getItem("currentSkin")||"default"
-
-let skinsData=[
-
-{name:"Default blok",id:"default",geom:"box",color:0x00ffff,cost:0},
-
-{name:"Rode kubus",id:"red",geom:"box",color:0xff0000,cost:10},
-
-{name:"Blauwe cilinder",id:"blue",geom:"cylinder",color:0x0066ff,cost:10},
-
-{name:"Gouden kegel",id:"gold",geom:"cone",color:0xffcc00,cost:20},
-
-{name:"Paarse bol",id:"purple",geom:"sphere",color:0x800080,cost:15},
-
-{name:"Neon ster",id:"star",geom:"ico",color:0x00ffea,cost:25},
-
-{name:"Diamant",id:"diamond",geom:"oct",color:0x00ffff,cost:40},
-
-{name:"Kristal",id:"crystal",geom:"tetra",color:0x66ffff,cost:50},
-
-{name:"Kroon",id:"crown",geom:"torus",color:0xffdd00,cost:80},
-
-{name:"Alien",id:"alien",geom:"dodeca",color:0x00ff00,cost:120},
-
-{name:"Super ster",id:"superstar",geom:"ico",color:0xffff00,cost:200}
-
-]
-
-function updateShop(){
-
-let container=document.getElementById("skinButtons")
-container.innerHTML=""
-
-for(let s of skinsData){
-
-let btn=document.createElement("button")
-
-if(!ownedSkins.includes(s.id) && s.cost>0){
-
-btn.innerText=s.name+" - "+s.cost+" munten"
-btn.onclick=()=>buySkin(s.id,s.cost)
-
-}else{
-
-btn.innerText="Gebruik "+s.name
-btn.onclick=()=>{
-currentSkin=s.id
-localStorage.setItem("currentSkin",s.id)
-alert(s.name+" geselecteerd!")
-}
-
-}
-
-container.appendChild(btn)
-
-}
-
-}
-
-updateShop()
-
-shopButton.onclick=function(){shopMenu.style.display="block"}
-
-function closeShop(){shopMenu.style.display="none"}
-
-function buySkin(id,cost){
-
-if(totalCoins<cost){
-alert("Niet genoeg munten")
-return
-}
-
-totalCoins-=cost
-coinsTotal.innerText=totalCoins
-localStorage.setItem("coins",totalCoins)
-
-ownedSkins.push(id)
-localStorage.setItem("skins",JSON.stringify(ownedSkins))
-
-currentSkin=id
-localStorage.setItem("currentSkin",id)
-
-alert("Skin gekocht!")
-
-updateShop()
-
-}
 
 let difficulty="easy"
 let powerType="ice"
@@ -221,6 +155,47 @@ let kills=0
 let coins=0
 let gameActive=false
 
+let shootTimer=0
+let shootIndex=0
+let aPressed=false
+
+let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
+let currentSkin="default"
+
+document.getElementById("shopButton").onclick=function(){
+shopMenu.style.display="block"
+}
+
+function closeShop(){
+shopMenu.style.display="none"
+}
+
+function buySkin(color,cost){
+
+if(ownedSkins.includes(color)){
+currentSkin=color
+alert("Skin geselecteerd!")
+return
+}
+
+if(totalCoins<cost){
+alert("Niet genoeg munten")
+return
+}
+
+totalCoins-=cost
+coinsTotal.innerText=totalCoins
+localStorage.setItem("coins",totalCoins)
+
+ownedSkins.push(color)
+localStorage.setItem("skins",JSON.stringify(ownedSkins))
+
+currentSkin=color
+
+alert("Skin gekocht!")
+
+}
+
 function chooseDifficulty(mode){
 difficulty=mode
 difficultyMenu.style.display="none"
@@ -235,6 +210,8 @@ gamesPlayed++
 localStorage.setItem("played",gamesPlayed)
 played.innerText=gamesPlayed
 
+document.getElementById("stats").style.display="none"
+
 characterMenu.style.display="none"
 hud.style.display="block"
 
@@ -242,7 +219,12 @@ gameActive=true
 
 scene=new THREE.Scene()
 
-camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000)
+camera=new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+5000
+)
 
 renderer=new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth,window.innerHeight)
@@ -250,16 +232,20 @@ document.body.appendChild(renderer.domElement)
 
 scene.add(new THREE.AmbientLight(0xffffff,1))
 
+/* SEA */
+
 let sea=new THREE.Mesh(
-new THREE.CircleGeometry(2000,64),
+new THREE.CircleGeometry(5000,64),
 new THREE.MeshBasicMaterial({color:0x1e90ff})
 )
 
 sea.rotation.x=-Math.PI/2
 scene.add(sea)
 
+/* ISLAND */
+
 let island=new THREE.Mesh(
-new THREE.CircleGeometry(600,64),
+new THREE.CircleGeometry(2000,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
 )
 
@@ -267,43 +253,197 @@ island.rotation.x=-Math.PI/2
 island.position.y=0.1
 scene.add(island)
 
-let s=skinsData.find(x=>x.id===currentSkin)
+/* MOUNTAINS */
 
-let geom
+for(let i=0;i<20;i++){
 
-switch(s.geom){
+let mountain=new THREE.Mesh(
+new THREE.ConeGeometry(80,200,6),
+new THREE.MeshLambertMaterial({color:0x666666})
+)
 
-case "box": geom=new THREE.BoxGeometry(8,12,8);break
-case "cylinder": geom=new THREE.CylinderGeometry(6,6,12,16);break
-case "cone": geom=new THREE.ConeGeometry(8,16,16);break
-case "sphere": geom=new THREE.SphereGeometry(7,16,16);break
-case "ico": geom=new THREE.IcosahedronGeometry(8);break
-case "oct": geom=new THREE.OctahedronGeometry(8);break
-case "tetra": geom=new THREE.TetrahedronGeometry(8);break
-case "torus": geom=new THREE.TorusGeometry(6,2,16,100);break
-case "dodeca": geom=new THREE.DodecahedronGeometry(8);break
+mountain.position.set(
+(Math.random()-0.5)*3500,
+100,
+(Math.random()-0.5)*3500
+)
+
+scene.add(mountain)
 
 }
 
+/* TREES */
+
+for(let i=0;i<40;i++){
+
+let trunk=new THREE.Mesh(
+new THREE.CylinderGeometry(2,2,20),
+new THREE.MeshBasicMaterial({color:0x8b4513})
+)
+
+let leaves=new THREE.Mesh(
+new THREE.ConeGeometry(10,25,8),
+new THREE.MeshBasicMaterial({color:0x228B22})
+)
+
+trunk.position.set((Math.random()-0.5)*1800,10,(Math.random()-0.5)*1800)
+leaves.position.set(trunk.position.x,25,trunk.position.z)
+
+scene.add(trunk)
+scene.add(leaves)
+
+}
+
+/* ROCKS */
+
+for(let i=0;i<20;i++){
+
+let rock=new THREE.Mesh(
+new THREE.DodecahedronGeometry(15),
+new THREE.MeshBasicMaterial({color:0x777777})
+)
+
+rock.position.set((Math.random()-0.5)*1800,8,(Math.random()-0.5)*1800)
+
+scene.add(rock)
+
+}
+
+/* PLAYER */
+
+let color=0x00ffff
+if(currentSkin==="red")color=0xff0000
+if(currentSkin==="blue")color=0x0066ff
+if(currentSkin==="gold")color=0xffcc00
+
 player=new THREE.Mesh(
-geom,
-new THREE.MeshBasicMaterial({color:s.color})
+new THREE.BoxGeometry(8,12,8),
+new THREE.MeshBasicMaterial({color:color})
 )
 
 player.position.y=6
 scene.add(player)
 
+/* BOTS */
+
+let botCount=5
+if(difficulty==="hard")botCount=10
+if(difficulty==="impossible")botCount=18
+
+for(let i=0;i<botCount;i++){
+
+let bot=new THREE.Mesh(
+new THREE.BoxGeometry(8,12,8),
+new THREE.MeshBasicMaterial({color:0xffffff})
+)
+
+bot.position.set((Math.random()-0.5)*1500,6,(Math.random()-0.5)*1500)
+
+bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
+
+scene.add(bot)
+enemies.push(bot)
+
+}
+
+/* COINS */
+
+let coinCount=5
+if(difficulty==="hard")coinCount=7
+if(difficulty==="impossible")coinCount=10
+
+for(let i=0;i<coinCount;i++){
+
+let coin=new THREE.Mesh(
+new THREE.CylinderGeometry(4,4,2,16),
+new THREE.MeshBasicMaterial({color:0xffff00})
+)
+
+coin.rotation.x=Math.PI/2
+coin.position.set((Math.random()-0.5)*1500,6,(Math.random()-0.5)*1500)
+
+scene.add(coin)
+coinObjects.push(coin)
+
+}
+
+/* CONTROLS */
+
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true
+if(e.code==="Space")shoot()
+})
+
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false
+})
+
+document.addEventListener("click",shoot)
+
+document.addEventListener("mousemove",e=>{
+yaw-=e.movementX*0.002
+})
+
 animate()
+
+}
+
+function explode(position){
+
+let geo=new THREE.SphereGeometry(6)
+let mat=new THREE.MeshBasicMaterial({color:0xff6600})
+
+let boom=new THREE.Mesh(geo,mat)
+boom.position.copy(position)
+
+scene.add(boom)
+
+setTimeout(()=>{
+scene.remove(boom)
+},300)
+
+}
+
+function shoot(){
+
+let bullet=new THREE.Mesh(
+new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xffffff})
+)
+
+bullet.position.copy(player.position)
+bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw))
+
+scene.add(bullet)
+bullets.push(bullet)
 
 }
 
 function animate(){
 
 requestAnimationFrame(animate)
-
 if(!gameActive)return
 
+for(let c of coinObjects){
+c.rotation.y+=0.05
+}
+
+if(keys["arrowup"]||keys["z"])player.position.z-=4
+if(keys["arrowdown"]||keys["s"])player.position.z+=4
+if(keys["arrowleft"]||keys["q"])player.position.x-=4
+if(keys["arrowright"]||keys["d"])player.position.x+=4
+
+if(player.position.length()>2000)endGame("VERDRONKEN")
+
 renderer.render(scene,camera)
+
+}
+
+function endGame(text){
+
+gameActive=false
+endText.innerText=text
+gameOver.style.display="block"
 
 }
 
