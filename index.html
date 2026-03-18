@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA EILAND - FIXED</title>
+<title>WASTAMA EILAND</title>
 
 <style>
 body{margin:0;overflow:hidden;background:black;color:white;font-family:Arial;}
@@ -41,15 +41,11 @@ button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
 
 <div id="characterMenu">
 <h1>Kies je mannetje</h1>
-<button onclick="startGame('ice')">❄ IJs</button>
-<button onclick="startGame('fire')">🔥 Vuur</button>
-<button onclick="startGame('lightning')">⚡ Bliksem</button>
+<button onclick="startGame()">▶ Start</button>
 </div>
 
 <div id="hud">
 <div>Hits: <span id="hp">0</span> / 3</div>
-<div>Gedood: <span id="kills">0</span></div>
-<div>Munten: <span id="coins">0</span></div>
 </div>
 
 <div id="gameOver" style="display:none">
@@ -66,8 +62,6 @@ button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
 <button id="goldBtn"></button>
 <button id="purpleBtn"></button>
 <button id="neonBtn"></button>
-<button id="iceblockBtn"></button>
-<button id="flameBtn"></button>
 
 </div>
 
@@ -75,28 +69,20 @@ button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
 
 <script>
 
-// ================= DATA =================
-let gamesPlayed=parseInt(localStorage.getItem("played"))||0;
-let gamesWon=parseInt(localStorage.getItem("won"))||0;
+// ===== DATA =====
 let totalCoins=parseInt(localStorage.getItem("coins"))||0;
-
-played.innerText=gamesPlayed;
-won.innerText=gamesWon;
 coinsTotal.innerText=totalCoins;
 
-// SKINS
-let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"];
+let ownedSkins=JSON.parse(localStorage.getItem("skins"))||[];
 let currentSkin=localStorage.getItem("selectedSkin")||"default";
 
-// ================= SHOP =================
+// ===== SHOP =====
 const skins=[
 {id:"red",cost:10,btn:"redBtn"},
 {id:"blue",cost:10,btn:"blueBtn"},
 {id:"gold",cost:20,btn:"goldBtn"},
 {id:"purple",cost:15,btn:"purpleBtn"},
-{id:"neon",cost:25,btn:"neonBtn"},
-{id:"iceblock",cost:15,btn:"iceblockBtn"},
-{id:"flame",cost:25,btn:"flameBtn"}
+{id:"neon",cost:25,btn:"neonBtn"}
 ];
 
 shopButton.onclick=()=>{
@@ -118,7 +104,7 @@ if(currentSkin===s.id)btn.classList.add("selected");
 else btn.classList.remove("selected");
 
 }else{
-btn.innerText=s.id.toUpperCase()+" - "+s.cost;
+btn.innerText=s.id.toUpperCase()+" - "+s.cost+" munten";
 btn.onclick=()=>buySkin(s.id,s.cost);
 btn.classList.remove("selected");
 }
@@ -147,29 +133,18 @@ localStorage.setItem("selectedSkin",skin);
 updateShop();
 }
 
-// ================= GAME =================
-let difficulty="easy";
-let powerType="ice";
+// ===== GAME =====
 let scene,camera,renderer,player;
-let enemies=[],bullets=[],enemyBullets=[],coinObjects=[];
-let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false;
 
-function chooseDifficulty(mode){
-difficulty=mode;
+function chooseDifficulty(){
 difficultyMenu.style.display="none";
 characterMenu.style.display="block";
 }
 
-function startGame(type){
-
-powerType=type;
-gamesPlayed++;
-localStorage.setItem("played",gamesPlayed);
-played.innerText=gamesPlayed;
+function startGame(){
 
 characterMenu.style.display="none";
 hud.style.display="block";
-gameActive=true;
 
 scene=new THREE.Scene();
 camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
@@ -179,27 +154,39 @@ document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// ===== PLAYER (SKIN WERKT) =====
+// ===== PLAYER =====
+// DEFAULT = blok als je geen skin hebt
 let colorMap={
-red:0xff0000,blue:0x0066ff,gold:0xffcc00,purple:0x800080,
-neon:0x00ffea,iceblock:0x99ccff,flame:0xff6600,default:0x00ffff
+red:0xff0000,
+blue:0x0066ff,
+gold:0xffcc00,
+purple:0x800080,
+neon:0x00ffea,
+default:0x00ffff
 };
 
-let geometry,height=12;
+let geometry;
+
+// ALS skin NIET gekocht → blok
+if(!ownedSkins.includes(currentSkin)){
+currentSkin="default";
+}
 
 switch(currentSkin){
 case "red":geometry=new THREE.BoxGeometry(8,12,8);break;
 case "blue":geometry=new THREE.CylinderGeometry(6,6,12,16);break;
-case "gold":geometry=new THREE.ConeGeometry(8,16,16);height=16;break;
-case "purple":geometry=new THREE.SphereGeometry(7,16,16);height=14;break;
+case "gold":geometry=new THREE.ConeGeometry(8,16,16);break;
+case "purple":geometry=new THREE.SphereGeometry(7,16,16);break;
 case "neon":geometry=new THREE.IcosahedronGeometry(8,0);break;
-case "iceblock":geometry=new THREE.BoxGeometry(8,12,8);break;
-case "flame":geometry=new THREE.ConeGeometry(6,16,8);height=16;break;
 default:geometry=new THREE.BoxGeometry(8,12,8);
 }
 
-player=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:colorMap[currentSkin]}));
-player.position.y=height/2;
+player=new THREE.Mesh(
+geometry,
+new THREE.MeshBasicMaterial({color:colorMap[currentSkin]})
+);
+
+player.position.y=6;
 scene.add(player);
 
 animate();
@@ -207,10 +194,10 @@ animate();
 
 function animate(){
 requestAnimationFrame(animate);
-if(!gameActive)return;
 renderer.render(scene,camera);
 }
 
 </script>
+
 </body>
 </html>
