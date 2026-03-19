@@ -1,297 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
 <meta charset="UTF-8">
 <title>WASTAMA EILAND</title>
-
 <style>
-body{margin:0;overflow:hidden;background:black;color:white;font-family:Arial;}
-#hud{position:absolute;top:10px;left:10px;}
+body { margin:0; overflow:hidden; background:black; font-family:Arial; color:white; }
+#hud { position:absolute; top:10px; left:10px; font-size:16px; }
+button { padding:10px; font-size:16px; }
 </style>
-
 </head>
 <body>
 
 <div id="hud">
-Hits: <span id="hp">0</span>/3 |
-Kills: <span id="kills">0</span> |
-Coins: <span id="coins">0</span>
+Hits: <span id="hp">0</span>/3 | Kills: <span id="kills">0</span> | Coins: <span id="coins">0</span>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
+// --- GAME VARIABLES ---
+let scene, camera, renderer, player;
+let enemies=[], bullets=[], enemyBullets=[], coins=[], healthPacks=[];
+let keys={}, yaw=0;
+let hits=0, kills=0, coinCount=0;
+let abilityCooldown=0;
 
-let scene,camera,renderer,player
-let enemies=[],bullets=[],enemyBullets=[]
-let coins=[],healthPacks=[]
+// --- INITIALIZE SCENE ---
+scene = new THREE.Scene();
+camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
+renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-let keys={}
-let yaw=0
+scene.add(new THREE.AmbientLight(0xffffff,1));
 
-let hits=0
-let kills=0
-let coinCount=0
+// --- MAP ---
+let ground = new THREE.Mesh(
+    new THREE.CircleGeometry(600,64),
+    new THREE.MeshPhongMaterial({color:0x228B22})
+);
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
 
-let abilityCooldown=0
+// --- PLAYER ---
+player = new THREE.Mesh(
+    new THREE.BoxGeometry(8,12,8),
+    new THREE.MeshPhongMaterial({color:0x00ffff})
+);
+player.position.y=6;
+scene.add(player);
 
-/* SETUP */
-
-scene=new THREE.Scene()
-
-camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000)
-
-renderer=new THREE.WebGLRenderer()
-renderer.setSize(window.innerWidth,window.innerHeight)
-document.body.appendChild(renderer.domElement)
-
-scene.add(new THREE.AmbientLight(0xffffff,1))
-
-/* MAP */
-
-let ground=new THREE.Mesh(
-new THREE.CircleGeometry(600,64),
-new THREE.MeshBasicMaterial({color:0x228B22})
-)
-ground.rotation.x=-Math.PI/2
-scene.add(ground)
-
-/* PLAYER */
-
-player=new THREE.Mesh(
-new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0x00ffff})
-)
-player.position.y=6
-scene.add(player)
-
-/* ENEMIES */
-
-for(let i=0;i<8;i++){
-let bot=new THREE.Mesh(
-new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0xffffff})
-)
-bot.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
-scene.add(bot)
-enemies.push(bot)
+// --- ENEMIES ---
+function spawnEnemies(count){
+    for(let i=0;i<count;i++){
+        let bot = new THREE.Mesh(
+            new THREE.BoxGeometry(8,12,8),
+            new THREE.MeshPhongMaterial({color:0xffffff})
+        );
+        bot.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400);
+        scene.add(bot);
+        enemies.push(bot);
+    }
 }
+spawnEnemies(8);
 
-/* COINS */
-
-for(let i=0;i<5;i++){
-let c=new THREE.Mesh(
-new THREE.CylinderGeometry(4,4,2,16),
-new THREE.MeshBasicMaterial({color:0xffff00})
-)
-c.rotation.x=Math.PI/2
-c.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
-scene.add(c)
-coins.push(c)
+// --- COINS ---
+function spawnCoins(count){
+    for(let i=0;i<count;i++){
+        let c = new THREE.Mesh(
+            new THREE.CylinderGeometry(4,4,2,16),
+            new THREE.MeshPhongMaterial({color:0xffff00})
+        );
+        c.rotation.x=Math.PI/2;
+        c.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400);
+        scene.add(c);
+        coins.push(c);
+    }
 }
+spawnCoins(5);
 
-/* HEALTH */
-
-for(let i=0;i<3;i++){
-let h=new THREE.Mesh(
-new THREE.BoxGeometry(6,6,6),
-new THREE.MeshBasicMaterial({color:0xff00ff})
-)
-h.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
-scene.add(h)
-healthPacks.push(h)
+// --- HEALTH PACKS ---
+function spawnHealth(count){
+    for(let i=0;i<count;i++){
+        let h = new THREE.Mesh(
+            new THREE.BoxGeometry(6,6,6),
+            new THREE.MeshPhongMaterial({color:0xff00ff})
+        );
+        h.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400);
+        scene.add(h);
+        healthPacks.push(h);
+    }
 }
+spawnHealth(3);
 
-/* CONTROLS */
+// --- CONTROLS ---
+document.addEventListener("keydown", e => { keys[e.key.toLowerCase()]=true; if(e.code==="Space") shoot(); if(e.key.toLowerCase()==="e") useAbility(); });
+document.addEventListener("keyup", e => { keys[e.key.toLowerCase()]=false; });
+document.addEventListener("mousemove", e => { yaw -= e.movementX*0.002; });
+document.addEventListener("click", shoot);
 
-document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true
-
-if(e.code==="Space")shoot()
-if(e.key.toLowerCase()==="e")useAbility()
-})
-
-document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false
-})
-
-document.addEventListener("mousemove",e=>{
-yaw-=e.movementX*0.002
-})
-
-document.addEventListener("click",shoot)
-
-/* SHOOT */
-
+// --- SHOOT FUNCTION ---
 function shoot(){
-let b=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff})
-)
-
-b.position.copy(player.position)
-b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw))
-
-scene.add(b)
-bullets.push(b)
+    let b = new THREE.Mesh(
+        new THREE.SphereGeometry(2),
+        new THREE.MeshPhongMaterial({color:0xffffff})
+    );
+    b.position.copy(player.position);
+    b.userData.dir = new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
+    scene.add(b);
+    bullets.push(b);
 }
 
-/* ABILITY */
-
+// --- ABILITY FUNCTION ---
 function useAbility(){
-
-if(abilityCooldown>0)return
-abilityCooldown=300
-
-for(let i=enemies.length-1;i>=0;i--){
-let bot=enemies[i]
-
-if(player.position.distanceTo(bot.position)<80){
-scene.remove(bot)
-enemies.splice(i,1)
-
-kills++
-document.getElementById("kills").innerText=kills
-}
-}
+    if(abilityCooldown>0) return;
+    abilityCooldown=300;
+    for(let i=enemies.length-1;i>=0;i--){
+        let bot=enemies[i];
+        if(player.position.distanceTo(bot.position)<80){
+            scene.remove(bot);
+            enemies.splice(i,1);
+            kills++;
+            document.getElementById("kills").innerText=kills;
+        }
+    }
 }
 
-/* ENEMY SHOOT */
-
+// --- ENEMY SHOOT FUNCTION ---
 function shootEnemy(bot){
-
-let dir=player.position.clone().sub(bot.position).normalize()
-
-let b=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000})
-)
-
-b.position.copy(bot.position)
-b.userData.dir=dir
-
-scene.add(b)
-enemyBullets.push(b)
+    let dir = player.position.clone().sub(bot.position).normalize();
+    let b = new THREE.Mesh(
+        new THREE.SphereGeometry(2),
+        new THREE.MeshPhongMaterial({color:0xff0000})
+    );
+    b.position.copy(bot.position);
+    b.userData.dir = dir;
+    scene.add(b);
+    enemyBullets.push(b);
 }
 
-/* LOOP */
-
+// --- ANIMATE LOOP ---
 function animate(){
+    requestAnimationFrame(animate);
 
-requestAnimationFrame(animate)
+    // MOVEMENT
+    let speed = keys["m"]?8:4;
+    if(keys["arrowup"]||keys["w"]) player.position.z-=speed;
+    if(keys["arrowdown"]||keys["s"]) player.position.z+=speed;
+    if(keys["arrowleft"]||keys["a"]) player.position.x-=speed;
+    if(keys["arrowright"]||keys["d"]) player.position.x+=speed;
 
-/* MOVEMENT */
-let speed = keys["m"] ? 8 : 4
+    // COINS
+    for(let i=coins.length-1;i>=0;i--){
+        if(player.position.distanceTo(coins[i].position)<10){
+            scene.remove(coins[i]);
+            coins.splice(i,1);
+            coinCount++;
+            document.getElementById("coins").innerText=coinCount;
+        }
+    }
 
-if(keys["arrowup"]||keys["z"])player.position.z-=speed
-if(keys["arrowdown"]||keys["s"])player.position.z+=speed
-if(keys["arrowleft"]||keys["q"])player.position.x-=speed
-if(keys["arrowright"]||keys["d"])player.position.x+=speed
+    // HEALTH
+    for(let i=healthPacks.length-1;i>=0;i--){
+        if(player.position.distanceTo(healthPacks[i].position)<10){
+            scene.remove(healthPacks[i]);
+            healthPacks.splice(i,1);
+            if(hits>0){ hits--; document.getElementById("hp").innerText=hits; }
+        }
+    }
 
-/* COINS */
+    // BULLETS
+    for(let i=bullets.length-1;i>=0;i--){
+        bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
+        for(let j=enemies.length-1;j>=0;j--){
+            if(bullets[i].position.distanceTo(enemies[j].position)<8){
+                scene.remove(enemies[j]);
+                enemies.splice(j,1);
+                kills++;
+                document.getElementById("kills").innerText=kills;
+                scene.remove(bullets[i]);
+                bullets.splice(i,1);
+                if(enemies.length===0){ alert("GEWONNEN!"); location.reload(); }
+                break;
+            }
+        }
+    }
 
-for(let i=coins.length-1;i>=0;i--){
-let c=coins[i]
-if(player.position.distanceTo(c.position)<10){
-scene.remove(c)
-coins.splice(i,1)
-coinCount++
-document.getElementById("coins").innerText=coinCount
-}
-}
+    // ENEMIES FOLLOW
+    enemies.forEach(bot => {
+        let dir = player.position.clone().sub(bot.position).normalize();
+        bot.position.add(dir.multiplyScalar(0.6));
+        if(Math.random()<0.01) shootEnemy(bot);
+    });
 
-/* HEALTH */
+    // ENEMY BULLETS
+    for(let i=enemyBullets.length-1;i>=0;i--){
+        enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
+        if(enemyBullets[i].position.distanceTo(player.position)<8){
+            hits++;
+            document.getElementById("hp").innerText=hits;
+            scene.remove(enemyBullets[i]);
+            enemyBullets.splice(i,1);
+            if(hits>=3){ alert("GAME OVER"); location.reload(); }
+        }
+    }
 
-for(let i=healthPacks.length-1;i>=0;i--){
-let h=healthPacks[i]
-if(player.position.distanceTo(h.position)<10){
-scene.remove(h)
-healthPacks.splice(i,1)
-if(hits>0){
-hits--
-document.getElementById("hp").innerText=hits
-}
-}
-}
+    // CAMERA
+    camera.position.x=player.position.x-Math.sin(yaw)*40;
+    camera.position.z=player.position.z+Math.cos(yaw)*40;
+    camera.position.y=25;
+    camera.lookAt(player.position);
 
-/* BULLETS */
+    renderer.render(scene,camera);
 
-for(let i=bullets.length-1;i>=0;i--){
-let b=bullets[i]
-b.position.add(b.userData.dir.clone().multiplyScalar(10))
-
-for(let j=enemies.length-1;j>=0;j--){
-let bot=enemies[j]
-
-if(b.position.distanceTo(bot.position)<8){
-scene.remove(bot)
-enemies.splice(j,1)
-
-kills++
-document.getElementById("kills").innerText=kills
-
-scene.remove(b)
-bullets.splice(i,1)
-
-if(enemies.length===0){
-alert("GEWONNEN!")
-location.reload()
-}
-break
-}
-}
-}
-
-/* ENEMIES */
-
-for(let bot of enemies){
-
-let dir=player.position.clone().sub(bot.position).normalize()
-bot.position.add(dir.multiplyScalar(0.6))
-
-if(Math.random()<0.01){
-shootEnemy(bot)
-}
+    if(abilityCooldown>0) abilityCooldown--;
 }
 
-/* ENEMY BULLETS */
-
-for(let i=enemyBullets.length-1;i>=0;i--){
-let b=enemyBullets[i]
-
-b.position.add(b.userData.dir.clone().multiplyScalar(8))
-
-if(b.position.distanceTo(player.position)<8){
-
-hits++
-document.getElementById("hp").innerText=hits
-
-scene.remove(b)
-enemyBullets.splice(i,1)
-
-if(hits>=3){
-alert("GAME OVER")
-location.reload()
-}
-}
-}
-
-/* CAMERA */
-
-camera.position.x=player.position.x-Math.sin(yaw)*40
-camera.position.z=player.position.z+Math.cos(yaw)*40
-camera.position.y=25
-
-camera.lookAt(player.position)
-
-renderer.render(scene,camera)
-
-if(abilityCooldown>0) abilityCooldown--
-}
-
-animate()
+animate();
 
 </script>
-
 </body>
 </html>
