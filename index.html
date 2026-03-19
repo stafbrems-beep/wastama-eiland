@@ -1,3 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WASTAMA EILAND</title>
+
+<style>
+body{margin:0;overflow:hidden;background:black;color:white;font-family:Arial;}
+#hud{position:absolute;top:10px;left:10px;}
+</style>
+
+</head>
+<body>
+
+<div id="hud">
+Hits: <span id="hp">0</span>/3 |
+Kills: <span id="kills">0</span> |
+Coins: <span id="coins">0</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
 
 let scene,camera,renderer,player
@@ -11,14 +33,9 @@ let hits=0
 let kills=0
 let coinCount=0
 
-let gameActive=false
 let abilityCooldown=0
 
-/* START */
-
-function startGame(){
-
-document.body.innerHTML += "<div id='hud' style='position:absolute;top:10px;left:10px'>Hits: <span id='hp'>0</span>/3 | Kills: <span id='kills'>0</span> | Coins: <span id='coins'>0</span></div>"
+/* SETUP */
 
 scene=new THREE.Scene()
 
@@ -51,14 +68,11 @@ scene.add(player)
 /* ENEMIES */
 
 for(let i=0;i<8;i++){
-
 let bot=new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0xffffff})
 )
-
 bot.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
-
 scene.add(bot)
 enemies.push(bot)
 }
@@ -66,15 +80,12 @@ enemies.push(bot)
 /* COINS */
 
 for(let i=0;i<5;i++){
-
 let c=new THREE.Mesh(
 new THREE.CylinderGeometry(4,4,2,16),
 new THREE.MeshBasicMaterial({color:0xffff00})
 )
-
 c.rotation.x=Math.PI/2
 c.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
-
 scene.add(c)
 coins.push(c)
 }
@@ -82,14 +93,11 @@ coins.push(c)
 /* HEALTH */
 
 for(let i=0;i<3;i++){
-
 let h=new THREE.Mesh(
 new THREE.BoxGeometry(6,6,6),
 new THREE.MeshBasicMaterial({color:0xff00ff})
 )
-
 h.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
-
 scene.add(h)
 healthPacks.push(h)
 }
@@ -98,6 +106,7 @@ healthPacks.push(h)
 
 document.addEventListener("keydown",e=>{
 keys[e.key.toLowerCase()]=true
+
 if(e.code==="Space")shoot()
 if(e.key.toLowerCase()==="e")useAbility()
 })
@@ -112,14 +121,9 @@ yaw-=e.movementX*0.002
 
 document.addEventListener("click",shoot)
 
-gameActive=true
-animate()
-}
-
 /* SHOOT */
 
 function shoot(){
-
 let b=new THREE.Mesh(
 new THREE.SphereGeometry(2),
 new THREE.MeshBasicMaterial({color:0xffffff})
@@ -140,11 +144,9 @@ if(abilityCooldown>0)return
 abilityCooldown=300
 
 for(let i=enemies.length-1;i>=0;i--){
-
 let bot=enemies[i]
 
 if(player.position.distanceTo(bot.position)<80){
-
 scene.remove(bot)
 enemies.splice(i,1)
 
@@ -154,14 +156,31 @@ document.getElementById("kills").innerText=kills
 }
 }
 
+/* ENEMY SHOOT */
+
+function shootEnemy(bot){
+
+let dir=player.position.clone().sub(bot.position).normalize()
+
+let b=new THREE.Mesh(
+new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xff0000})
+)
+
+b.position.copy(bot.position)
+b.userData.dir=dir
+
+scene.add(b)
+enemyBullets.push(b)
+}
+
 /* LOOP */
 
 function animate(){
 
 requestAnimationFrame(animate)
-if(!gameActive)return
 
-/* SPEED (M = sprint) */
+/* MOVEMENT */
 let speed = keys["m"] ? 8 : 4
 
 if(keys["arrowup"]||keys["z"])player.position.z-=speed
@@ -205,7 +224,6 @@ for(let j=enemies.length-1;j>=0;j--){
 let bot=enemies[j]
 
 if(b.position.distanceTo(bot.position)<8){
-
 scene.remove(bot)
 enemies.splice(j,1)
 
@@ -219,13 +237,12 @@ if(enemies.length===0){
 alert("GEWONNEN!")
 location.reload()
 }
-
 break
 }
 }
 }
 
-/* ENEMIES VOLGEN JOU */
+/* ENEMIES */
 
 for(let bot of enemies){
 
@@ -272,26 +289,9 @@ renderer.render(scene,camera)
 if(abilityCooldown>0) abilityCooldown--
 }
 
-/* ENEMY SHOOT */
-
-function shootEnemy(bot){
-
-let dir=player.position.clone().sub(bot.position).normalize()
-
-let b=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000})
-)
-
-b.position.copy(bot.position)
-b.userData.dir=dir
-
-scene.add(b)
-enemyBullets.push(b)
-}
-
-/* START GAME DIRECT */
-
-startGame()
+animate()
 
 </script>
+
+</body>
+</html>
