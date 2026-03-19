@@ -1,94 +1,24 @@
 <script>
 
-let gamesPlayed=parseInt(localStorage.getItem("played"))||0
-let gamesWon=parseInt(localStorage.getItem("won"))||0
-let totalCoins=parseInt(localStorage.getItem("coins"))||0
-
-played.innerText=gamesPlayed
-won.innerText=gamesWon
-coinsTotal.innerText=totalCoins
-
-let difficulty="easy"
-let powerType="ice"
-
 let scene,camera,renderer,player
 let enemies=[],bullets=[],enemyBullets=[]
-let coinObjects=[]
-let healthPacks=[]
+let coins=[],healthPacks=[]
 
 let keys={}
 let yaw=0
+
 let hits=0
 let kills=0
-let coins=0
+let coinCount=0
+
 let gameActive=false
-
-let shootTimer=0
-let shootIndex=0
-let aPressed=false
-
 let abilityCooldown=0
 
-let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
-let currentSkin="default"
+/* START */
 
-/* SHOP */
+function startGame(){
 
-shopButton.onclick=()=>shopMenu.style.display="block"
-
-function closeShop(){
-shopMenu.style.display="none"
-}
-
-function buySkin(color,cost){
-
-if(totalCoins<cost){
-alert("Niet genoeg munten")
-return
-}
-
-totalCoins-=cost
-coinsTotal.innerText=totalCoins
-localStorage.setItem("coins",totalCoins)
-
-ownedSkins.push(color)
-localStorage.setItem("skins",JSON.stringify(ownedSkins))
-
-currentSkin=color
-alert("Skin gekocht!")
-}
-
-function selectSkin(color){
-
-if(!ownedSkins.includes(color)){
-alert("Niet gekocht!")
-return
-}
-
-currentSkin=color
-alert("Skin geselecteerd!")
-}
-
-/* GAME START */
-
-function chooseDifficulty(mode){
-difficulty=mode
-difficultyMenu.style.display="none"
-characterMenu.style.display="block"
-}
-
-function startGame(type){
-
-powerType=type
-
-gamesPlayed++
-localStorage.setItem("played",gamesPlayed)
-played.innerText=gamesPlayed
-
-characterMenu.style.display="none"
-hud.style.display="block"
-
-gameActive=true
+document.body.innerHTML += "<div id='hud' style='position:absolute;top:10px;left:10px'>Hits: <span id='hp'>0</span>/3 | Kills: <span id='kills'>0</span> | Coins: <span id='coins'>0</span></div>"
 
 scene=new THREE.Scene()
 
@@ -98,59 +28,36 @@ renderer=new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth,window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
-let light=new THREE.AmbientLight(0xffffff,1)
-scene.add(light)
+scene.add(new THREE.AmbientLight(0xffffff,1))
 
 /* MAP */
 
-let sea=new THREE.Mesh(
-new THREE.CircleGeometry(2000,64),
-new THREE.MeshBasicMaterial({color:0x1e90ff})
-)
-sea.rotation.x=-Math.PI/2
-scene.add(sea)
-
-let island=new THREE.Mesh(
+let ground=new THREE.Mesh(
 new THREE.CircleGeometry(600,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
 )
-island.rotation.x=-Math.PI/2
-island.position.y=0.1
-scene.add(island)
+ground.rotation.x=-Math.PI/2
+scene.add(ground)
 
 /* PLAYER */
 
-let color=0x00ffff
-if(currentSkin==="red")color=0xff0000
-if(currentSkin==="blue")color=0x0066ff
-if(currentSkin==="gold")color=0xffcc00
-
 player=new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:color})
+new THREE.MeshBasicMaterial({color:0x00ffff})
 )
-
 player.position.y=6
 scene.add(player)
 
 /* ENEMIES */
 
-let botCount=5
-if(difficulty==="hard")botCount=10
-if(difficulty==="impossible")botCount=18
-
-for(let i=0;i<botCount;i++){
+for(let i=0;i<8;i++){
 
 let bot=new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0xffffff})
 )
 
-bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
-
-bot.userData.freeze=0
-bot.userData.noShoot=0
-bot.userData.permaFreeze=false
+bot.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
 
 scene.add(bot)
 enemies.push(bot)
@@ -160,31 +67,31 @@ enemies.push(bot)
 
 for(let i=0;i<5;i++){
 
-let coin=new THREE.Mesh(
+let c=new THREE.Mesh(
 new THREE.CylinderGeometry(4,4,2,16),
 new THREE.MeshBasicMaterial({color:0xffff00})
 )
 
-coin.rotation.x=Math.PI/2
-coin.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
+c.rotation.x=Math.PI/2
+c.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
 
-scene.add(coin)
-coinObjects.push(coin)
+scene.add(c)
+coins.push(c)
 }
 
-/* HEALTH PACKS */
+/* HEALTH */
 
 for(let i=0;i<3;i++){
 
-let hpPack=new THREE.Mesh(
+let h=new THREE.Mesh(
 new THREE.BoxGeometry(6,6,6),
 new THREE.MeshBasicMaterial({color:0xff00ff})
 )
 
-hpPack.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
+h.position.set((Math.random()-0.5)*400,6,(Math.random()-0.5)*400)
 
-scene.add(hpPack)
-healthPacks.push(hpPack)
+scene.add(h)
+healthPacks.push(h)
 }
 
 /* CONTROLS */
@@ -192,21 +99,20 @@ healthPacks.push(hpPack)
 document.addEventListener("keydown",e=>{
 keys[e.key.toLowerCase()]=true
 if(e.code==="Space")shoot()
-if(e.key==="a")aPressed=true
-if(e.key==="e")useAbility()
+if(e.key.toLowerCase()==="e")useAbility()
 })
 
 document.addEventListener("keyup",e=>{
 keys[e.key.toLowerCase()]=false
-if(e.key==="a")aPressed=false
 })
-
-document.addEventListener("click",shoot)
 
 document.addEventListener("mousemove",e=>{
 yaw-=e.movementX*0.002
 })
 
+document.addEventListener("click",shoot)
+
+gameActive=true
 animate()
 }
 
@@ -214,47 +120,48 @@ animate()
 
 function shoot(){
 
-let bullet=new THREE.Mesh(
+let b=new THREE.Mesh(
 new THREE.SphereGeometry(2),
 new THREE.MeshBasicMaterial({color:0xffffff})
 )
 
-bullet.position.copy(player.position)
-bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw))
+b.position.copy(player.position)
+b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw))
 
-scene.add(bullet)
-bullets.push(bullet)
+scene.add(b)
+bullets.push(b)
 }
 
 /* ABILITY */
 
 function useAbility(){
 
-if(abilityCooldown>0) return
+if(abilityCooldown>0)return
 abilityCooldown=300
 
-for(let bot of enemies){
+for(let i=enemies.length-1;i>=0;i--){
+
+let bot=enemies[i]
 
 if(player.position.distanceTo(bot.position)<80){
 
 scene.remove(bot)
+enemies.splice(i,1)
+
 kills++
-
+document.getElementById("kills").innerText=kills
+}
+}
 }
 
-}
-
-kills.innerText=kills
-}
-
-/* ANIMATE */
+/* LOOP */
 
 function animate(){
 
 requestAnimationFrame(animate)
 if(!gameActive)return
 
-/* SPEED MET M */
+/* SPEED (M = sprint) */
 let speed = keys["m"] ? 8 : 4
 
 if(keys["arrowup"]||keys["z"])player.position.z-=speed
@@ -264,13 +171,13 @@ if(keys["arrowright"]||keys["d"])player.position.x+=speed
 
 /* COINS */
 
-for(let i=coinObjects.length-1;i>=0;i--){
-let c=coinObjects[i]
+for(let i=coins.length-1;i>=0;i--){
+let c=coins[i]
 if(player.position.distanceTo(c.position)<10){
 scene.remove(c)
-coinObjects.splice(i,1)
-coins++
-document.getElementById("coins").innerText=coins
+coins.splice(i,1)
+coinCount++
+document.getElementById("coins").innerText=coinCount
 }
 }
 
@@ -283,7 +190,7 @@ scene.remove(h)
 healthPacks.splice(i,1)
 if(hits>0){
 hits--
-hp.innerText=hits
+document.getElementById("hp").innerText=hits
 }
 }
 }
@@ -309,7 +216,8 @@ scene.remove(b)
 bullets.splice(i,1)
 
 if(enemies.length===0){
-endGame("GEWONNEN!")
+alert("GEWONNEN!")
+location.reload()
 }
 
 break
@@ -317,12 +225,38 @@ break
 }
 }
 
-/* ENEMY AI (FOLLOW PLAYER) */
+/* ENEMIES VOLGEN JOU */
 
 for(let bot of enemies){
 
 let dir=player.position.clone().sub(bot.position).normalize()
 bot.position.add(dir.multiplyScalar(0.6))
+
+if(Math.random()<0.01){
+shootEnemy(bot)
+}
+}
+
+/* ENEMY BULLETS */
+
+for(let i=enemyBullets.length-1;i>=0;i--){
+let b=enemyBullets[i]
+
+b.position.add(b.userData.dir.clone().multiplyScalar(8))
+
+if(b.position.distanceTo(player.position)<8){
+
+hits++
+document.getElementById("hp").innerText=hits
+
+scene.remove(b)
+enemyBullets.splice(i,1)
+
+if(hits>=3){
+alert("GAME OVER")
+location.reload()
+}
+}
 }
 
 /* CAMERA */
@@ -338,12 +272,26 @@ renderer.render(scene,camera)
 if(abilityCooldown>0) abilityCooldown--
 }
 
-/* END */
+/* ENEMY SHOOT */
 
-function endGame(text){
-gameActive=false
-endText.innerText=text
-gameOver.style.display="block"
+function shootEnemy(bot){
+
+let dir=player.position.clone().sub(bot.position).normalize()
+
+let b=new THREE.Mesh(
+new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xff0000})
+)
+
+b.position.copy(bot.position)
+b.userData.dir=dir
+
+scene.add(b)
+enemyBullets.push(b)
 }
+
+/* START GAME DIRECT */
+
+startGame()
 
 </script>
