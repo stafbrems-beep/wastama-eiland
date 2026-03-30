@@ -61,6 +61,11 @@ body{
 }
 
 #gamesMenu{
+  display:none;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
   width:600px;
   height:400px;
   background:#111;
@@ -87,7 +92,7 @@ button{
 
 <!-- SHOP BUTTON -->
 <div id="shopButton">SHOP</div>
-<div id="gamesButton">STAATSMAN SPELLEN</div>
+<div id="gamesButton">SAMEN SPELLEN</div>
 
 <!-- DIFFICULTY MENU -->
 <div id="difficultyMenu">
@@ -127,13 +132,12 @@ button{
   <button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
 </div>
 
-<!-- GAMES MENU -->
+<!-- SAMEN SPELLEN MENU -->
 <div id="gamesMenu">
   <div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
        onclick="closeGamesMenu()">✖</div>
-  <h2>STAATSMAN SPELLEN</h2>
-  <p>Hier komt straks multiplayer of nieuwe spel opties!</p>
-  <button onclick="alert('Deze feature komt later!')">Speel nu</button>
+  <h2>SAMEN SPELLEN</h2>
+  <p>Hier komen straks nieuwe game opties</p>
 </div>
 
 <!-- YOUTUBE BACKGROUND -->
@@ -175,7 +179,7 @@ function buySkin(color,cost){
     alert("Skin gekocht!");
 }
 
-// --- GAMES MENU ---
+// --- SAMEN SPELLEN MENU ---
 document.getElementById("gamesButton").onclick = () => { document.getElementById("gamesMenu").style.display="block"; };
 function closeGamesMenu() { document.getElementById("gamesMenu").style.display="none"; }
 
@@ -264,7 +268,7 @@ function startGame(type){
         keys[e.key.toLowerCase()]=true;
         if(e.code==="Space") shoot();
         if(e.key.toLowerCase()==="a") aPressed=true;
-        if(e.key.toLowerCase()==="m") keys["m"]=true; // sprint
+        if(e.key.toLowerCase()==="m") keys["m"]=true;
         if(e.key.toLowerCase()==="e") useAbility();
     });
     document.addEventListener("keyup", e=>{
