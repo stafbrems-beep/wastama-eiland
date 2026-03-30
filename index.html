@@ -5,142 +5,131 @@
 <title>WASTAMA EILAND</title>
 <style>
 body{
-  margin:0;
-  overflow:hidden;
-  background:black;
-  font-family:Arial;
-  color:white;
+margin:0;
+overflow:hidden;
+background:black;
+font-family:Arial;
+color:white;
 }
-
-#difficultyMenu,#characterMenu,#gameOver,#gamesMenu{
-  position:absolute;
-  top:40%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  text-align:center;
+#usernameScreen,#difficultyMenu,#characterMenu,#gameOver{
+position:absolute;
+top:40%;
+left:50%;
+transform:translate(-50%,-50%);
+text-align:center;
 }
-
-#characterMenu,#gamesMenu{display:none;}
-
+#usernameScreen input{padding:10px;font-size:16px;margin-top:10px;}
+#usernameScreen button{padding:12px;margin-top:10px;font-size:16px;cursor:pointer;}
+#characterMenu{display:none;}
 #hud{
-  position:absolute;
-  top:60px;
-  left:20px;
-  display:none;
+position:absolute;
+top:60px;
+left:20px;
+display:none;
 }
-
 #stats{
-  position:absolute;
-  top:10px;
-  left:20px;
+position:absolute;
+top:10px;
+left:20px;
 }
-
-#shopButton,#gamesButton{
-  position:absolute;
-  top:10px;
-  right:20px;
-  background:#444;
-  padding:10px;
-  cursor:pointer;
-  margin-top:5px;
+#shopButton,#playTogetherButton{
+position:absolute;
+top:10px;
+right:20px;
+background:#444;
+padding:10px;
+cursor:pointer;
+margin-left:5px;
 }
-
-#gamesButton{top:50px;}
-
-#shopMenu{
-  display:none;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:600px;
-  height:400px;
-  background:#111;
-  border:3px solid white;
-  padding:20px;
+#playTogetherButton{right:120px;}
+#shopMenu,#togetherMenu{
+display:none;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:600px;
+height:400px;
+background:#111;
+border:3px solid white;
+padding:20px;
 }
-
-#gamesMenu{
-  display:none;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:600px;
-  height:400px;
-  background:#111;
-  border:3px solid white;
-  padding:20px;
-}
-
 button{
-  padding:12px;
-  margin:5px;
-  font-size:16px;
-  cursor:pointer;
+padding:12px;
+margin:5px;
+font-size:16px;
+cursor:pointer;
+}
+#playerNameDisplay{
+position:absolute;
+top:40px;
+left:20px;
+font-size:18px;
+font-weight:bold;
 }
 </style>
 </head>
 <body>
 
-<!-- STATS -->
+<div id="usernameScreen">
+<h1>Wat is je gebruikersnaam?</h1>
+<input type="text" id="usernameInput" placeholder="Typ je naam hier">
+<br>
+<button onclick="setUsername()">Bevestig</button>
+<p id="usernameError" style="color:red;"></p>
+</div>
+
+<div id="playerNameDisplay"></div>
+
 <div id="stats">
-  <div>Games gespeeld: <span id="played">0</span></div>
-  <div>Games gewonnen: <span id="won">0</span></div>
-  <div>Munten totaal: <span id="coinsTotal">0</span></div>
+<div>Games gespeeld: <span id="played">0</span></div>
+<div>Games gewonnen: <span id="won">0</span></div>
+<div>Munten totaal: <span id="coinsTotal">0</span></div>
 </div>
 
-<!-- SHOP BUTTON -->
 <div id="shopButton">SHOP</div>
-<div id="gamesButton">SAMEN SPELLEN</div>
+<div id="playTogetherButton">Samen Spellen</div>
 
-<!-- DIFFICULTY MENU -->
 <div id="difficultyMenu">
-  <h1>Kies moeilijkheid</h1>
-  <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
-  <button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
-  <button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
+<h1>Kies moeilijkheid</h1>
+<button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
+<button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
+<button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
 </div>
 
-<!-- CHARACTER MENU -->
 <div id="characterMenu">
-  <h1>Kies je mannetje</h1>
-  <button onclick="startGame('ice')">❄ IJs</button>
-  <button onclick="startGame('fire')">🔥 Vuur</button>
-  <button onclick="startGame('lightning')">⚡ Bliksem</button>
+<h1>Kies je mannetje</h1>
+<button onclick="startGame('ice')">❄ IJs</button>
+<button onclick="startGame('fire')">🔥 Vuur</button>
+<button onclick="startGame('lightning')">⚡ Bliksem</button>
 </div>
 
-<!-- HUD -->
 <div id="hud">
-  <div>Hits: <span id="hp">0</span> / 3</div>
-  <div>Gedood: <span id="kills">0</span></div>
-  <div>Munten: <span id="coins">0</span></div>
+<div>Hits: <span id="hp">0</span> / 3</div>
+<div>Gedood: <span id="kills">0</span></div>
+<div>Munten: <span id="coins">0</span></div>
 </div>
 
-<!-- GAME OVER -->
 <div id="gameOver" style="display:none">
-  <h1 id="endText"></h1>
-  <button onclick="location.reload()">Opnieuw spelen</button>
+<h1 id="endText"></h1>
+<button onclick="location.reload()">Opnieuw spelen</button>
 </div>
 
-<!-- SHOP MENU -->
 <div id="shopMenu">
-  <div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px" onclick="closeShop()">✖</div>
-  <h2>SHOP</h2>
-  <button onclick="buySkin('red',10)">Rode skin - 10 munten</button>
-  <button onclick="buySkin('blue',10)">Blauwe skin - 10 munten</button>
-  <button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
+<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
+onclick="closeShop()">✖</div>
+<h2>SHOP</h2>
+<button onclick="buySkin('red',10)">Rode skin - 10 munten</button>
+<button onclick="buySkin('blue',10)">Blauwe skin - 10 munten</button>
+<button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
 </div>
 
-<!-- SAMEN SPELLEN MENU -->
-<div id="gamesMenu">
-  <div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
-       onclick="closeGamesMenu()">✖</div>
-  <h2>SAMEN SPELLEN</h2>
-  <p>Hier komen straks nieuwe game opties</p>
+<div id="togetherMenu">
+<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
+onclick="closeTogetherMenu()">✖</div>
+<h2>Hier komen straks nieuwe game opties</h2>
 </div>
 
-<!-- YOUTUBE BACKGROUND -->
 <iframe width="0" height="0"
 src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
 frameborder="0" allow="autoplay"></iframe>
@@ -148,6 +137,26 @@ frameborder="0" allow="autoplay"></iframe>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
+// --- USERNAME ---
+let username = localStorage.getItem("username") || "";
+if(username){
+    document.getElementById("usernameScreen").style.display="none";
+    document.getElementById("playerNameDisplay").innerText=username;
+}else{
+    document.getElementById("usernameScreen").style.display="block";
+}
+function setUsername(){
+    let input=document.getElementById("usernameInput").value.trim();
+    if(!/^[a-zA-Z]+$/.test(input)){
+        document.getElementById("usernameError").innerText="Gebruik alleen letters, geen getallen of symbolen!";
+        return;
+    }
+    username=input;
+    localStorage.setItem("username",username);
+    document.getElementById("usernameScreen").style.display="none";
+    document.getElementById("playerNameDisplay").innerText=username;
+}
+
 // --- STATS ---
 let gamesPlayed = parseInt(localStorage.getItem("played")) || 0;
 let gamesWon = parseInt(localStorage.getItem("won")) || 0;
@@ -161,7 +170,12 @@ let difficulty="easy";
 let powerType="ice";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinObjects=[],healthPacks=[];
-let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false,shootTimer=0,aPressed=false,abilityCooldown=0;
+let keys={};
+let yaw=0;
+let hits=0, kills=0, coins=0;
+let gameActive=false;
+let shootTimer=0, shootIndex=0, aPressed=false;
+let abilityCooldown=0;
 let ownedSkins = JSON.parse(localStorage.getItem("skins"))||["default"];
 let currentSkin="default";
 
@@ -180,8 +194,8 @@ function buySkin(color,cost){
 }
 
 // --- SAMEN SPELLEN MENU ---
-document.getElementById("gamesButton").onclick = () => { document.getElementById("gamesMenu").style.display="block"; };
-function closeGamesMenu() { document.getElementById("gamesMenu").style.display="none"; }
+document.getElementById("playTogetherButton").onclick = () => togetherMenu.style.display="block";
+function closeTogetherMenu(){ togetherMenu.style.display="none"; }
 
 // --- MENU FUNCTIONS ---
 function chooseDifficulty(mode){
@@ -195,7 +209,10 @@ function startGame(type){
     powerType = type;
     gamesPlayed++; localStorage.setItem("played",gamesPlayed);
     document.getElementById("played").innerText = gamesPlayed;
-    characterMenu.style.display="none"; hud.style.display="block"; gameActive=true;
+
+    characterMenu.style.display="none";
+    hud.style.display="block";
+    gameActive=true;
 
     // --- THREE JS SCENE ---
     scene = new THREE.Scene();
@@ -268,7 +285,7 @@ function startGame(type){
         keys[e.key.toLowerCase()]=true;
         if(e.code==="Space") shoot();
         if(e.key.toLowerCase()==="a") aPressed=true;
-        if(e.key.toLowerCase()==="m") keys["m"]=true;
+        if(e.key.toLowerCase()==="m") keys["m"]=true; 
         if(e.key.toLowerCase()==="e") useAbility();
     });
     document.addEventListener("keyup", e=>{
@@ -283,120 +300,84 @@ function startGame(type){
 }
 
 // --- GAME FUNCTIONS ---
-function explode(position){ 
-    let boom=new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshBasicMaterial({color:0xff6600}));
-    boom.position.copy(position); scene.add(boom);
-    setTimeout(()=>{scene.remove(boom)},300);
-}
-
-function shoot(){
-    let bullet=new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshBasicMaterial({color:0xffffff}));
-    bullet.position.copy(player.position);
-    bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
-    scene.add(bullet); bullets.push(bullet);
-}
-
-function shootBot(bot){
-    let dir=player.position.clone().sub(bot.position).normalize();
-    let bullet=new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshBasicMaterial({color:0xff0000}));
-    bullet.position.copy(bot.position); bullet.userData.dir=dir;
-    scene.add(bullet); enemyBullets.push(bullet);
-}
-
-function useAbility(){
-    if(abilityCooldown>0) return;
-    abilityCooldown=300;
-    for(let i=enemies.length-1;i>=0;i--){
-        if(player.position.distanceTo(enemies[i].position)<80){
-            scene.remove(enemies[i]); enemies.splice(i,1);
-            kills++; document.getElementById("kills").innerText=kills;
-        }
-    }
-}
-
-function endGame(text){ 
-    gameActive=false; 
-    document.getElementById("endText").innerText=text; 
-    gameOver.style.display="block"; 
-}
+function explode(position){ let boom=new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshBasicMaterial({color:0xff6600})); boom.position.copy(position); scene.add(boom); setTimeout(()=>{scene.remove(boom)},300); }
+function shoot(){ let bullet=new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshBasicMaterial({color:0xffffff})); bullet.position.copy(player.position); bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw)); scene.add(bullet); bullets.push(bullet); }
+function shootBot(bot){ let dir=player.position.clone().sub(bot.position).normalize(); let bullet=new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshBasicMaterial({color:0xff0000})); bullet.position.copy(bot.position); bullet.userData.dir=dir; scene.add(bullet); enemyBullets.push(bullet); }
+function useAbility(){ if(abilityCooldown>0) return; abilityCooldown=300; for(let i=enemies.length-1;i>=0;i--){ if(player.position.distanceTo(enemies[i].position)<80){ scene.remove(enemies[i]); enemies.splice(i,1); kills++; document.getElementById("kills").innerText=kills; } } }
+function endGame(text){ gameActive=false; document.getElementById("endText").innerText=text; gameOver.style.display="block"; }
 
 // --- ANIMATE ---
 function animate(){
-    requestAnimationFrame(animate);
-    if(!gameActive) return;
+requestAnimationFrame(animate);
+if(!gameActive) return;
 
-    let speed = keys["m"]?8:4;
-    if(keys["arrowup"]||keys["z"]) player.position.z-=speed;
-    if(keys["arrowdown"]||keys["s"]) player.position.z+=speed;
-    if(keys["arrowleft"]||keys["q"]) player.position.x-=speed;
-    if(keys["arrowright"]||keys["d"]) player.position.x+=speed;
+// PLAYER MOVEMENT
+let speed = keys["m"]?8:4;
+if(keys["arrowup"]||keys["z"]) player.position.z-=speed;
+if(keys["arrowdown"]||keys["s"]) player.position.z+=speed;
+if(keys["arrowleft"]||keys["q"]) player.position.x-=speed;
+if(keys["arrowright"]||keys["d"]) player.position.x+=speed;
 
-    for(let i=coinObjects.length-1;i>=0;i--){
-        if(player.position.distanceTo(coinObjects[i].position)<10){
-            scene.remove(coinObjects[i]); coinObjects.splice(i,1); coins++;
-            document.getElementById("coins").innerText=coins;
-        }
+// COINS PICKUP
+for(let i=coinObjects.length-1;i>=0;i--){
+    if(player.position.distanceTo(coinObjects[i].position)<10){
+        scene.remove(coinObjects[i]); coinObjects.splice(i,1); coins++; document.getElementById("coins").innerText=coins;
     }
-
-    for(let i=healthPacks.length-1;i>=0;i--){
-        if(player.position.distanceTo(healthPacks[i].position)<10){
-            scene.remove(healthPacks[i]); healthPacks.splice(i,1); 
-            if(hits>0){ hits--; document.getElementById("hp").innerText=hits; }
-        }
-    }
-
-    for(let i=bullets.length-1;i>=0;i--){
-        bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
-        for(let j=enemies.length-1;j>=0;j--){
-            if(bullets[i].position.distanceTo(enemies[j].position)<8){
-                explode(enemies[j].position);
-                if(aPressed){
-                    if(powerType==="ice") enemies[j].userData.freeze=180;
-                    if(powerType==="fire") enemies[j].userData.noShoot=360;
-                    if(powerType==="lightning") enemies[j].userData.permaFreeze=true;
-                }
-                scene.remove(enemies[j]); enemies.splice(j,1); kills++;
-                document.getElementById("kills").innerText=kills;
-                scene.remove(bullets[i]); bullets.splice(i,1);
-                if(enemies.length===0){
-                    gamesWon++; localStorage.setItem("won",gamesWon);
-                    totalCoins+=coins; localStorage.setItem("coins",totalCoins);
-                    endGame("GEWONNEN!");
-                }
-                break;
-            }
-        }
-    }
-
-    for(let bot of enemies){
-        if(bot.userData.permaFreeze) continue;
-        if(bot.userData.freeze>0){ bot.userData.freeze--; continue; }
-        bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5));
-        if(Math.random()<0.02){ bot.userData.moveDir = new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize(); }
-        if(shootTimer>60 && bot.userData.noShoot<=0){ shootBot(bot); shootTimer=0; }
-        if(bot.userData.noShoot>0) bot.userData.noShoot--;
-    }
-    shootTimer++;
-
-    for(let i=enemyBullets.length-1;i>=0;i--){
-        enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
-        if(enemyBullets[i].position.distanceTo(player.position)<8){
-            hits++; document.getElementById("hp").innerText=hits;
-            scene.remove(enemyBullets[i]); enemyBullets.splice(i,1);
-            if(hits>=3) endGame("GAME OVER");
-        }
-    }
-
-    camera.position.x=player.position.x-Math.sin(yaw)*40;
-    camera.position.z=player.position.z+Math.cos(yaw)*40;
-    camera.position.y=25;
-    camera.lookAt(player.position);
-
-    renderer.render(scene,camera);
-
-    if(abilityCooldown>0) abilityCooldown--;
 }
-</script>
 
+// HEALTH PICKUP
+for(let i=healthPacks.length-1;i>=0;i--){
+    if(player.position.distanceTo(healthPacks[i].position)<10){
+        scene.remove(healthPacks[i]); healthPacks.splice(i,1); if(hits>0){ hits--; document.getElementById("hp").innerText=hits; }
+    }
+}
+
+// PLAYER BULLETS
+for(let i=bullets.length-1;i>=0;i--){
+    bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
+    for(let j=enemies.length-1;j>=0;j--){
+        if(bullets[i].position.distanceTo(enemies[j].position)<8){
+            explode(enemies[j].position);
+            if(aPressed){ if(powerType==="ice") enemies[j].userData.freeze=180; if(powerType==="fire") enemies[j].userData.noShoot=360; if(powerType==="lightning") enemies[j].userData.permaFreeze=true; }
+            scene.remove(enemies[j]); enemies.splice(j,1); kills++; document.getElementById("kills").innerText=kills;
+            scene.remove(bullets[i]); bullets.splice(i,1);
+            if(enemies.length===0){ gamesWon++; localStorage.setItem("won",gamesWon); totalCoins+=coins; localStorage.setItem("coins",totalCoins); endGame("GEWONNEN!"); }
+            break;
+        }
+    }
+}
+
+// BOTS MOVE + SHOOT
+for(let bot of enemies){
+    if(bot.userData.permaFreeze) continue;
+    if(bot.userData.freeze>0){ bot.userData.freeze--; continue; }
+    bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5));
+    if(Math.random()<0.02){ bot.userData.moveDir = new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize(); }
+    if(shootTimer>60 && bot.userData.noShoot<=0){ shootBot(bot); shootTimer=0; }
+    if(bot.userData.noShoot>0) bot.userData.noShoot--;
+}
+
+shootTimer++;
+
+// ENEMY BULLETS
+for(let i=enemyBullets.length-1;i>=0;i--){
+    enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
+    if(enemyBullets[i].position.distanceTo(player.position)<8){
+        hits++; document.getElementById("hp").innerText=hits;
+        scene.remove(enemyBullets[i]); enemyBullets.splice(i,1);
+        if(hits>=3) endGame("GAME OVER");
+    }
+}
+
+camera.position.x=player.position.x-Math.sin(yaw)*40;
+camera.position.z=player.position.z+Math.cos(yaw)*40;
+camera.position.y=25;
+camera.lookAt(player.position);
+
+renderer.render(scene,camera);
+if(abilityCooldown>0) abilityCooldown--;
+}
+
+</script>
 </body>
 </html>
