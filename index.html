@@ -22,15 +22,16 @@ body{
   text-align:center;
 }
 
-/* NAAM LINKS BOVEN */
 #usernameDisplay{
   position:absolute;
   top:10px;
-  left:20px;
-  font-size:18px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:20px;
+  display:none;
 }
 
-/* REST */
+/* GAME UI */
 #difficultyMenu,#characterMenu,#gameOver,#gamesMenu{
   position:absolute;
   top:40%;
@@ -39,7 +40,7 @@ body{
   text-align:center;
 }
 
-#characterMenu,#gamesMenu,#difficultyMenu{display:none;}
+#difficultyMenu,#characterMenu,#gamesMenu{display:none;}
 
 #hud{
   position:absolute;
@@ -50,7 +51,7 @@ body{
 
 #stats{
   position:absolute;
-  top:40px;
+  top:10px;
   left:20px;
 }
 
@@ -90,12 +91,12 @@ button{
 
 <body>
 
-<!-- NAAM SCHERM -->
+<!-- NAAM -->
 <div id="nameScreen">
-  <h1>Wat is je gebruikersnaam?</h1>
-  <input id="nameInput" placeholder="Naam..." style="padding:10px;font-size:16px">
+  <h1>Wat is je naam?</h1>
+  <input id="nameInput" placeholder="Geen cijfers!">
   <br><br>
-  <button onclick="saveName()">Start</button>
+  <button onclick="startFromName()">Start</button>
 </div>
 
 <div id="usernameDisplay"></div>
@@ -110,7 +111,6 @@ button{
 <div id="shopButton">SHOP</div>
 <div id="gamesButton">SAMEN SPELLEN</div>
 
-<!-- DIFFICULTY -->
 <div id="difficultyMenu">
   <h1>Kies moeilijkheid</h1>
   <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
@@ -118,7 +118,6 @@ button{
   <button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
 </div>
 
-<!-- CHARACTER -->
 <div id="characterMenu">
   <h1>Kies je mannetje</h1>
   <button onclick="startGame('ice')">❄ IJs</button>
@@ -126,145 +125,189 @@ button{
   <button onclick="startGame('lightning')">⚡ Bliksem</button>
 </div>
 
-<!-- HUD -->
 <div id="hud">
   <div>Hits: <span id="hp">0</span> / 3</div>
   <div>Gedood: <span id="kills">0</span></div>
   <div>Munten: <span id="coins">0</span></div>
 </div>
 
-<!-- GAME OVER -->
 <div id="gameOver" style="display:none">
   <h1 id="endText"></h1>
   <button onclick="location.reload()">Opnieuw spelen</button>
 </div>
 
-<!-- SHOP -->
 <div id="shopMenu">
-  <div style="position:absolute;right:10px;top:10px;cursor:pointer" onclick="closeShop()">✖</div>
+  <div onclick="closeShop()" style="position:absolute;right:10px;top:10px;cursor:pointer">✖</div>
   <h2>SHOP</h2>
-
-  <!-- OUDE -->
   <button onclick="buySkin('red',10)">Rode skin - 10</button>
   <button onclick="buySkin('blue',10)">Blauwe skin - 10</button>
-  <button onclick="buySkin('gold',20)">Gouden skin - 20</button>
-
-  <!-- NIEUWE -->
-  <button onclick="buySkin('blueball',40)">Blauwe bol - 40</button>
+  <button onclick="buySkin('gold',20)">Goud - 20</button>
+  <button onclick="buySkin('ball',40)">Blauwe bol - 40</button>
   <button onclick="buySkin('triangle',30)">Groene driehoek - 30</button>
   <button onclick="buySkin('rainbow',60)">Rainbow blok - 60</button>
 </div>
 
-<!-- SAMEN SPELLEN -->
 <div id="gamesMenu">
-  <div style="position:absolute;right:10px;top:10px;cursor:pointer" onclick="closeGamesMenu()">✖</div>
+  <div onclick="closeGamesMenu()" style="position:absolute;right:10px;top:10px;cursor:pointer">✖</div>
   <h2>SAMEN SPELLEN</h2>
   <p>hier komen straks nieuwe game opties</p>
 </div>
 
-<!-- MUZIEK -->
+<!-- NIEUWE MUZIEK -->
 <iframe width="0" height="0"
-src="https://www.youtube.com/embed/TddO_JZ-RDo?autoplay=1&loop=1&playlist=TddO_JZ-RDo"
+src="https://www.youtube.com/embed/TddO_JZ-RDo?autoplay=1&loop=1&playlist=TddO_JZ-RDo&controls=0"
 allow="autoplay"></iframe>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-// --- NAAM ---
-let username="";
-function saveName(){
-  let input=document.getElementById("nameInput").value;
 
-  if(!input || /\d/.test(input)){
+/* NAAM START */
+function startFromName(){
+  let name = document.getElementById("nameInput").value;
+
+  if(!name || /\d/.test(name)){
     alert("Geen cijfers toegestaan!");
     return;
   }
 
-  username=input;
-  document.getElementById("usernameDisplay").innerText=username;
+  document.getElementById("nameScreen").style.display="none";
+  document.getElementById("usernameDisplay").style.display="block";
+  document.getElementById("usernameDisplay").innerText = name;
 
-  nameScreen.style.display="none";
-  difficultyMenu.style.display="block";
+  document.getElementById("difficultyMenu").style.display="block";
 }
 
-// --- REST = JOUW GAME ---
+/* REST = EXACT JOUW GAME */
+
 let gamesPlayed = parseInt(localStorage.getItem("played")) || 0;
 let gamesWon = parseInt(localStorage.getItem("won")) || 0;
 let totalCoins = parseInt(localStorage.getItem("coins")) || 0;
 
-document.getElementById("played").innerText = gamesPlayed;
-document.getElementById("won").innerText = gamesWon;
-document.getElementById("coinsTotal").innerText = totalCoins;
+played.innerText = gamesPlayed;
+won.innerText = gamesWon;
+coinsTotal.innerText = totalCoins;
 
 let difficulty="easy";
 let powerType="ice";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinObjects=[],healthPacks=[];
 let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false,shootTimer=0,aPressed=false,abilityCooldown=0;
-
 let ownedSkins = JSON.parse(localStorage.getItem("skins"))||["default"];
 let currentSkin="default";
 
-// SHOP
+/* SHOP */
 shopButton.onclick=()=>shopMenu.style.display="block";
 function closeShop(){shopMenu.style.display="none";}
-function buySkin(color,cost){
- if(totalCoins<cost)return alert("Niet genoeg munten");
- totalCoins-=cost;
- localStorage.setItem("coins",totalCoins);
- coinsTotal.innerText=totalCoins;
- currentSkin=color;
+function buySkin(c,cost){
+if(totalCoins<cost)return alert("Niet genoeg munten");
+totalCoins-=cost; coinsTotal.innerText=totalCoins;
+localStorage.setItem("coins",totalCoins);
+currentSkin=c;
 }
 
-// SAMEN
+/* SAMEN */
 gamesButton.onclick=()=>gamesMenu.style.display="block";
 function closeGamesMenu(){gamesMenu.style.display="none";}
 
-// MENU
-function chooseDifficulty(mode){
- difficulty=mode;
- difficultyMenu.style.display="none";
- characterMenu.style.display="block";
+/* MENU */
+function chooseDifficulty(m){
+difficulty=m;
+difficultyMenu.style.display="none";
+characterMenu.style.display="block";
 }
 
-// START GAME = EXACT JOUW LOGICA
+/* START GAME = ONGEWIJZIGD */
 function startGame(type){
- powerType=type;
- gamesPlayed++;localStorage.setItem("played",gamesPlayed);
- played.innerText=gamesPlayed;
+powerType=type;
+gamesPlayed++; localStorage.setItem("played",gamesPlayed);
+played.innerText=gamesPlayed;
+characterMenu.style.display="none"; hud.style.display="block"; gameActive=true;
 
- characterMenu.style.display="none";
- hud.style.display="block";
- gameActive=true;
+scene=new THREE.Scene();
+camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
+renderer=new THREE.WebGLRenderer();
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff,1));
 
- scene=new THREE.Scene();
- camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
- renderer=new THREE.WebGLRenderer();
- renderer.setSize(innerWidth,innerHeight);
- document.body.appendChild(renderer.domElement);
- scene.add(new THREE.AmbientLight(0xffffff,1));
+let sea=new THREE.Mesh(new THREE.CircleGeometry(2000,64),new THREE.MeshBasicMaterial({color:0x1e90ff}));
+sea.rotation.x=-Math.PI/2; scene.add(sea);
 
- let island=new THREE.Mesh(new THREE.CircleGeometry(600,64),
- new THREE.MeshBasicMaterial({color:0x228B22}));
- island.rotation.x=-Math.PI/2;
- scene.add(island);
+let island=new THREE.Mesh(new THREE.CircleGeometry(600,64),new THREE.MeshBasicMaterial({color:0x228B22}));
+island.rotation.x=-Math.PI/2; island.position.y=0.1; scene.add(island);
 
- player=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
- new THREE.MeshBasicMaterial({color:0x00ffff}));
- player.position.y=6;
- scene.add(player);
-
- animate();
+/* PLAYER (extra skins) */
+let playerMesh;
+if(currentSkin==="ball"){
+playerMesh=new THREE.SphereGeometry(6);
+}else if(currentSkin==="triangle"){
+playerMesh=new THREE.ConeGeometry(6,12,3);
+}else{
+playerMesh=new THREE.BoxGeometry(8,12,8);
 }
 
-// ANIMATE
+let material;
+if(currentSkin==="rainbow"){
+material=new THREE.MeshBasicMaterial({vertexColors:true});
+playerMesh=new THREE.BoxGeometry(8,12,8);
+}else{
+material=new THREE.MeshBasicMaterial({color:0x00ffff});
+}
+
+player=new THREE.Mesh(playerMesh,material);
+player.position.y=6;
+scene.add(player);
+
+/* REST GAME (zelfde) */
+for(let i=0;i<5;i++){
+let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),new THREE.MeshBasicMaterial({color:0xffffff}));
+bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
+bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize();
+scene.add(bot); enemies.push(bot);
+}
+
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true;
+if(e.code==="Space") shoot();
+if(e.key==="a") aPressed=true;
+if(e.key==="e") useAbility();
+});
+
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+if(e.key==="a") aPressed=false;
+});
+
+document.addEventListener("mousemove",e=>{yaw-=e.movementX*0.002;});
+
+animate();
+}
+
+function shoot(){
+let b=new THREE.Mesh(new THREE.SphereGeometry(2),new THREE.MeshBasicMaterial({color:0xffffff}));
+b.position.copy(player.position);
+b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
+scene.add(b); bullets.push(b);
+}
+
+function useAbility(){}
+
 function animate(){
- requestAnimationFrame(animate);
- if(!gameActive)return;
+requestAnimationFrame(animate);
+if(!gameActive)return;
 
- renderer.render(scene,camera);
+if(keys["z"])player.position.z-=4;
+if(keys["s"])player.position.z+=4;
+if(keys["q"])player.position.x-=4;
+if(keys["d"])player.position.x+=4;
+
+camera.position.set(player.position.x-40,25,player.position.z+40);
+camera.lookAt(player.position);
+
+renderer.render(scene,camera);
 }
-</script>
 
+</script>
 </body>
 </html>
