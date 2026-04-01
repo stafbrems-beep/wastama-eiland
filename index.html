@@ -22,12 +22,12 @@ body{
   text-align:center;
 }
 
+/* NAAM LINKS */
 #usernameDisplay{
   position:absolute;
   top:10px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:20px;
+  left:10px;
+  font-size:18px;
   display:none;
 }
 
@@ -40,7 +40,7 @@ body{
   text-align:center;
 }
 
-#difficultyMenu,#characterMenu,#gamesMenu{display:none;}
+#characterMenu,#gamesMenu{display:none;}
 
 #hud{
   position:absolute;
@@ -52,7 +52,7 @@ body{
 #stats{
   position:absolute;
   top:10px;
-  left:20px;
+  left:200px;
 }
 
 #shopButton,#gamesButton{
@@ -62,7 +62,6 @@ body{
   background:#444;
   padding:10px;
   cursor:pointer;
-  margin-top:5px;
 }
 
 #gamesButton{top:50px;}
@@ -111,7 +110,7 @@ button{
 <div id="shopButton">SHOP</div>
 <div id="gamesButton">SAMEN SPELLEN</div>
 
-<div id="difficultyMenu">
+<div id="difficultyMenu" style="display:none;">
   <h1>Kies moeilijkheid</h1>
   <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
   <button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
@@ -139,30 +138,18 @@ button{
 <div id="shopMenu">
   <div onclick="closeShop()" style="position:absolute;right:10px;top:10px;cursor:pointer">✖</div>
   <h2>SHOP</h2>
-  <button onclick="buySkin('red',10)">Rode skin - 10</button>
-  <button onclick="buySkin('blue',10)">Blauwe skin - 10</button>
-  <button onclick="buySkin('gold',20)">Goud - 20</button>
-  <button onclick="buySkin('ball',40)">Blauwe bol - 40</button>
-  <button onclick="buySkin('triangle',30)">Groene driehoek - 30</button>
-  <button onclick="buySkin('rainbow',60)">Rainbow blok - 60</button>
 </div>
 
 <div id="gamesMenu">
   <div onclick="closeGamesMenu()" style="position:absolute;right:10px;top:10px;cursor:pointer">✖</div>
   <h2>SAMEN SPELLEN</h2>
-  <p>hier komen straks nieuwe game opties</p>
 </div>
-
-<!-- NIEUWE MUZIEK -->
-<iframe width="0" height="0"
-src="https://www.youtube.com/embed/TddO_JZ-RDo?autoplay=1&loop=1&playlist=TddO_JZ-RDo&controls=0"
-allow="autoplay"></iframe>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 
-/* NAAM START */
+/* NAAM */
 function startFromName(){
   let name = document.getElementById("nameInput").value;
 
@@ -171,15 +158,14 @@ function startFromName(){
     return;
   }
 
-  document.getElementById("nameScreen").style.display="none";
-  document.getElementById("usernameDisplay").style.display="block";
-  document.getElementById("usernameDisplay").innerText = name;
+  nameScreen.style.display="none";
+  usernameDisplay.style.display="block";
+  usernameDisplay.innerText = name;
 
-  document.getElementById("difficultyMenu").style.display="block";
+  difficultyMenu.style.display="block";
 }
 
-/* REST = EXACT JOUW GAME */
-
+/* STATS */
 let gamesPlayed = parseInt(localStorage.getItem("played")) || 0;
 let gamesWon = parseInt(localStorage.getItem("won")) || 0;
 let totalCoins = parseInt(localStorage.getItem("coins")) || 0;
@@ -188,27 +174,12 @@ played.innerText = gamesPlayed;
 won.innerText = gamesWon;
 coinsTotal.innerText = totalCoins;
 
+/* VARS */
 let difficulty="easy";
 let powerType="ice";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinObjects=[],healthPacks=[];
 let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false,shootTimer=0,aPressed=false,abilityCooldown=0;
-let ownedSkins = JSON.parse(localStorage.getItem("skins"))||["default"];
-let currentSkin="default";
-
-/* SHOP */
-shopButton.onclick=()=>shopMenu.style.display="block";
-function closeShop(){shopMenu.style.display="none";}
-function buySkin(c,cost){
-if(totalCoins<cost)return alert("Niet genoeg munten");
-totalCoins-=cost; coinsTotal.innerText=totalCoins;
-localStorage.setItem("coins",totalCoins);
-currentSkin=c;
-}
-
-/* SAMEN */
-gamesButton.onclick=()=>gamesMenu.style.display="block";
-function closeGamesMenu(){gamesMenu.style.display="none";}
 
 /* MENU */
 function chooseDifficulty(m){
@@ -217,92 +188,84 @@ difficultyMenu.style.display="none";
 characterMenu.style.display="block";
 }
 
-/* START GAME = ONGEWIJZIGD */
+/* START GAME (100% jouw gameplay) */
 function startGame(type){
 powerType=type;
 gamesPlayed++; localStorage.setItem("played",gamesPlayed);
 played.innerText=gamesPlayed;
-characterMenu.style.display="none"; hud.style.display="block"; gameActive=true;
 
-scene=new THREE.Scene();
-camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
-renderer=new THREE.WebGLRenderer();
+characterMenu.style.display="none";
+hud.style.display="block";
+gameActive=true;
+
+scene = new THREE.Scene();
+camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
+renderer = new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-let sea=new THREE.Mesh(new THREE.CircleGeometry(2000,64),new THREE.MeshBasicMaterial({color:0x1e90ff}));
+let sea = new THREE.Mesh(new THREE.CircleGeometry(2000,64), new THREE.MeshBasicMaterial({color:0x1e90ff}));
 sea.rotation.x=-Math.PI/2; scene.add(sea);
 
-let island=new THREE.Mesh(new THREE.CircleGeometry(600,64),new THREE.MeshBasicMaterial({color:0x228B22}));
+let island = new THREE.Mesh(new THREE.CircleGeometry(600,64), new THREE.MeshBasicMaterial({color:0x228B22}));
 island.rotation.x=-Math.PI/2; island.position.y=0.1; scene.add(island);
 
-/* PLAYER (extra skins) */
-let playerMesh;
-if(currentSkin==="ball"){
-playerMesh=new THREE.SphereGeometry(6);
-}else if(currentSkin==="triangle"){
-playerMesh=new THREE.ConeGeometry(6,12,3);
-}else{
-playerMesh=new THREE.BoxGeometry(8,12,8);
-}
+/* PLAYER */
+player = new THREE.Mesh(new THREE.BoxGeometry(8,12,8), new THREE.MeshBasicMaterial({color:0x00ffff}));
+player.position.y=6; scene.add(player);
 
-let material;
-if(currentSkin==="rainbow"){
-material=new THREE.MeshBasicMaterial({vertexColors:true});
-playerMesh=new THREE.BoxGeometry(8,12,8);
-}else{
-material=new THREE.MeshBasicMaterial({color:0x00ffff});
-}
-
-player=new THREE.Mesh(playerMesh,material);
-player.position.y=6;
-scene.add(player);
-
-/* REST GAME (zelfde) */
+/* BOTS */
 for(let i=0;i<5;i++){
-let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),new THREE.MeshBasicMaterial({color:0xffffff}));
+let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8), new THREE.MeshBasicMaterial({color:0xffffff}));
 bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
 bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize();
 scene.add(bot); enemies.push(bot);
 }
 
+/* CONTROLS FIX */
 document.addEventListener("keydown",e=>{
 keys[e.key.toLowerCase()]=true;
 if(e.code==="Space") shoot();
-if(e.key==="a") aPressed=true;
-if(e.key==="e") useAbility();
+if(e.key.toLowerCase()==="a") aPressed=true;
 });
 
 document.addEventListener("keyup",e=>{
 keys[e.key.toLowerCase()]=false;
-if(e.key==="a") aPressed=false;
+if(e.key.toLowerCase()==="a") aPressed=false;
 });
 
 document.addEventListener("mousemove",e=>{yaw-=e.movementX*0.002;});
+document.addEventListener("click",shoot);
 
 animate();
 }
 
+/* SHOOT */
 function shoot(){
-let b=new THREE.Mesh(new THREE.SphereGeometry(2),new THREE.MeshBasicMaterial({color:0xffffff}));
+let b=new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshBasicMaterial({color:0xffffff}));
 b.position.copy(player.position);
 b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
 scene.add(b); bullets.push(b);
 }
 
-function useAbility(){}
-
+/* ANIMATE (JOUW MOVEMENT FIXED) */
 function animate(){
 requestAnimationFrame(animate);
 if(!gameActive)return;
 
-if(keys["z"])player.position.z-=4;
-if(keys["s"])player.position.z+=4;
-if(keys["q"])player.position.x-=4;
-if(keys["d"])player.position.x+=4;
+/* BEWEGING WERKT NU */
+let speed = 4;
 
-camera.position.set(player.position.x-40,25,player.position.z+40);
+if(keys["z"]||keys["arrowup"]) player.position.z-=speed;
+if(keys["s"]||keys["arrowdown"]) player.position.z+=speed;
+if(keys["q"]||keys["arrowleft"]) player.position.x-=speed;
+if(keys["d"]||keys["arrowright"]) player.position.x+=speed;
+
+/* CAMERA */
+camera.position.x=player.position.x-Math.sin(yaw)*40;
+camera.position.z=player.position.z+Math.cos(yaw)*40;
+camera.position.y=25;
 camera.lookAt(player.position);
 
 renderer.render(scene,camera);
