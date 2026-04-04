@@ -56,20 +56,6 @@ button{padding:12px;margin:5px;font-size:16px;cursor:pointer;}
 <button onclick="location.reload()">Opnieuw spelen</button>
 </div>
 
-<div id="shopMenu">
-<div style="position:absolute;right:10px;top:10px;cursor:pointer" onclick="closeShop()">✖</div>
-<h2>SHOP</h2>
-<button onclick="buySkin('red',10)">Rode skin - 10 munten</button>
-<button onclick="buySkin('blue',10)">Blauwe skin - 10 munten</button>
-<button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
-</div>
-
-<div id="gamesMenu">
-<div style="position:absolute;right:10px;top:10px;cursor:pointer" onclick="closeGamesMenu()">✖</div>
-<h2>SAMEN SPELLEN</h2>
-<p>Hier komen straks nieuwe game opties</p>
-</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
@@ -85,21 +71,10 @@ coinsTotal.innerText = totalCoins;
 let difficulty="easy";
 let powerType="ice";
 let scene,camera,renderer,player;
-let enemies=[],bullets=[],enemyBullets=[],coinObjects=[],healthPacks=[];
+let enemies=[],bullets=[],enemyBullets=[],coinObjects=[],rocks=[];
 let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false;
-let shootTimer=0,aPressed=false,abilityCooldown=0;
-let shootInterval=60,shootMode="all";
+let shootTimer=0,shootInterval=60,shootMode="all";
 let islandRadius = 600;
-
-// --- SHOP ---
-shopButton.onclick = ()=>shopMenu.style.display="block";
-function closeShop(){shopMenu.style.display="none";}
-function buySkin(c,cost){
-if(totalCoins<cost){alert("Niet genoeg munten");return;}
-totalCoins-=cost; coinsTotal.innerText=totalCoins;
-localStorage.setItem("coins",totalCoins);
-alert("gekocht!");
-}
 
 // --- MENU ---
 function chooseDifficulty(mode){
@@ -124,7 +99,7 @@ renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff,1));
 
-// eiland
+// zee + eiland
 let sea=new THREE.Mesh(new THREE.CircleGeometry(2000,64),
 new THREE.MeshBasicMaterial({color:0x1e90ff}));
 sea.rotation.x=-Math.PI/2; scene.add(sea);
@@ -133,22 +108,56 @@ let island=new THREE.Mesh(new THREE.CircleGeometry(600,64),
 new THREE.MeshBasicMaterial({color:0x228B22}));
 island.rotation.x=-Math.PI/2; island.position.y=0.1; scene.add(island);
 
+// 🌳 BOMEN
+for(let i=0;i<20;i++){
+let trunk=new THREE.Mesh(
+new THREE.CylinderGeometry(2,2,20),
+new THREE.MeshBasicMaterial({color:0x8b4513})
+);
+let leaves=new THREE.Mesh(
+new THREE.ConeGeometry(10,25,8),
+new THREE.MeshBasicMaterial({color:0x228B22})
+);
+trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900);
+leaves.position.set(trunk.position.x,25,trunk.position.z);
+scene.add(trunk); scene.add(leaves);
+}
+
+// 🪨 STENEN
+for(let i=0;i<15;i++){
+let rock=new THREE.Mesh(
+new THREE.DodecahedronGeometry(15),
+new THREE.MeshBasicMaterial({color:0x777777})
+);
+rock.position.set((Math.random()-0.5)*900,8,(Math.random()-0.5)*900);
+scene.add(rock); rocks.push(rock);
+}
+
+// 🪙 COINS
+for(let i=0;i<8;i++){
+let coin=new THREE.Mesh(
+new THREE.CylinderGeometry(4,4,2,16),
+new THREE.MeshBasicMaterial({color:0xffff00})
+);
+coin.rotation.x=Math.PI/2;
+coin.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
+scene.add(coin); coinObjects.push(coin);
+}
+
 // player
 player=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0x00ffff}));
 player.position.y=6; scene.add(player);
 
-// bots aantallen
+// bots
 let botCount=8;
 if(difficulty==="hard") botCount=14;
 if(difficulty==="impossible") botCount=21;
 
-// shoot gedrag
 if(difficulty==="easy"){shootInterval=180;shootMode="all";}
 if(difficulty==="hard"){shootInterval=120;shootMode="all";}
 if(difficulty==="impossible"){shootInterval=30;shootMode="burst";}
 
-// bots
 for(let i=0;i<botCount;i++){
 let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0xffffff}));
@@ -163,6 +172,7 @@ keys[e.key.toLowerCase()]=true;
 if(e.code==="Space") shoot();
 });
 document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+document.addEventListener("click",shoot);
 
 animate();
 }
@@ -174,15 +184,6 @@ new THREE.MeshBasicMaterial({color:0xffffff}));
 b.position.copy(player.position);
 b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
 scene.add(b); bullets.push(b);
-}
-
-function shootBot(bot){
-let dir=player.position.clone().sub(bot.position).normalize();
-let b=new THREE.Mesh(new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000}));
-b.position.copy(bot.position);
-b.userData.dir=dir;
-scene.add(b); enemyBullets.push(b);
 }
 
 // --- END ---
@@ -206,8 +207,16 @@ if(keys["d"]||keys["arrowright"]) player.position.x+=speed;
 
 // 🌊 verdrinken
 let dist=Math.sqrt(player.position.x**2+player.position.z**2);
-if(dist>islandRadius){
-endGame("VERDRONKEN");
+if(dist>islandRadius){ endGame("VERDRONKEN"); }
+
+// 🪙 coins pakken
+for(let i=coinObjects.length-1;i>=0;i--){
+if(player.position.distanceTo(coinObjects[i].position)<10){
+scene.remove(coinObjects[i]);
+coinObjects.splice(i,1);
+coins++;
+document.getElementById("coins").innerText=coins;
+}
 }
 
 // bullets
@@ -217,17 +226,18 @@ for(let i=enemies.length-1;i>=0;i--){
 if(b.position.distanceTo(enemies[i].position)<8){
 scene.remove(enemies[i]);
 enemies.splice(i,1);
-kills++; kills.innerText=kills;
+kills++;
+document.getElementById("kills").innerText=kills;
 
 if(enemies.length===0){
 gamesWon++; localStorage.setItem("won",gamesWon);
 
-// coins per difficulty
+// 💰 reward + collected coins
 let reward=3;
 if(difficulty==="hard") reward=5;
 if(difficulty==="impossible") reward=7;
 
-totalCoins+=reward;
+totalCoins += reward + coins;
 localStorage.setItem("coins",totalCoins);
 
 endGame("GEWONNEN!");
@@ -236,23 +246,16 @@ endGame("GEWONNEN!");
 }
 }
 
-// bots bewegen + schieten
+// bots
 shootTimer++;
 for(let bot of enemies){
 bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5));
 
 if(shootTimer>shootInterval){
-
-if(shootMode==="all"){
-shootBot(bot);
-}
-
+if(shootMode==="all"){ shootBot(bot); }
 if(shootMode==="burst"){
-if(Math.random()<0.15){
-shootBot(bot);
+if(Math.random()<0.15){ shootBot(bot); }
 }
-}
-
 }
 }
 if(shootTimer>shootInterval) shootTimer=0;
@@ -275,6 +278,16 @@ camera.position.y=25;
 camera.lookAt(player.position);
 
 renderer.render(scene,camera);
+}
+
+// bot shoot
+function shootBot(bot){
+let dir=player.position.clone().sub(bot.position).normalize();
+let b=new THREE.Mesh(new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xff0000}));
+b.position.copy(bot.position);
+b.userData.dir=dir;
+scene.add(b); enemyBullets.push(b);
 }
 </script>
 
