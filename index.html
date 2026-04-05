@@ -6,28 +6,32 @@
 <style>
 body{margin:0;overflow:hidden;background:black;font-family:Arial;color:white;}
 
-#difficultyMenu,#characterMenu,#gameOver,#gamesMenu{
-position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);text-align:center;}
-
-#characterMenu,#gamesMenu{display:none;}
-
-#hud{position:absolute;top:60px;left:20px;display:none;}
-#stats{position:absolute;top:10px;left:20px;}
-
-#shopButton{
-position:absolute;top:10px;right:20px;background:#444;padding:10px;cursor:pointer;
+#difficultyMenu,#gameOver{
+position:absolute;top:40%;left:50%;
+transform:translate(-50%,-50%);
+text-align:center;
+z-index:5;
 }
 
+#hud{position:absolute;top:60px;left:20px;display:none;z-index:5;}
+#stats{position:absolute;top:10px;left:20px;z-index:5;}
+
+#shopButton{
+position:absolute;top:10px;right:20px;
+background:#444;padding:10px;cursor:pointer;
+z-index:5;
+}
+
+/* 🔥 FULLSCREEN SHOP */
 #shopMenu{
 display:none;
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-width:700px;
-height:500px;
-background:#111;
-border:3px solid white;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:black;
+z-index:999;
 padding:20px;
 overflow-y:auto;
 }
@@ -57,13 +61,13 @@ button{padding:10px;margin:5px;cursor:pointer;}
 
 <div id="shopButton">SHOP</div>
 
+<!-- 🔥 FULL SCREEN SHOP -->
 <div id="shopMenu">
-<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
+<div style="position:absolute;right:20px;top:20px;font-size:30px;cursor:pointer"
 onclick="closeShop()">✖</div>
-<h2>SHOP</h2>
 
+<h1>SHOP</h1>
 <div id="skinsContainer"></div>
-
 </div>
 
 <div id="difficultyMenu">
@@ -71,11 +75,6 @@ onclick="closeShop()">✖</div>
 <button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
 <button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
 <button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
-</div>
-
-<div id="characterMenu">
-<h1>Kies je mannetje</h1>
-<button onclick="startGame()">Start</button>
 </div>
 
 <div id="hud">
@@ -136,7 +135,6 @@ let div=document.createElement("div");
 div.className="skin";
 
 let owned = ownedSkins.includes(s.name);
-
 let btn=document.createElement("button");
 
 if(currentSkin===s.name){
@@ -167,30 +165,33 @@ alert("Niet genoeg munten");
 };
 }
 
-div.innerHTML="<b>"+s.name+"</b>";
+div.innerHTML="<b>"+s.name+"</b><br>";
 div.appendChild(btn);
 container.appendChild(div);
 });
 }
 
-// --- GAME VARIABLES ---
+// --- GAME ---
 let difficulty="easy";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[];
 let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false;
-let shootTimer=0,shootInterval=60,shootMode="all";
 let islandRadius=600;
 
-// --- MENU ---
+// 🔥 DIRECT START (geen extra menu)
 function chooseDifficulty(mode){
 difficulty=mode;
 difficultyMenu.style.display="none";
-characterMenu.style.display="block";
+startGame();
 }
 
 // --- START ---
 function startGame(){
-characterMenu.style.display="none";
+
+gamesPlayed++; 
+localStorage.setItem("played",gamesPlayed);
+played.innerText=gamesPlayed;
+
 hud.style.display="block";
 gameActive=true;
 
@@ -209,47 +210,13 @@ let island=new THREE.Mesh(new THREE.CircleGeometry(600,64),
 new THREE.MeshBasicMaterial({color:0x228B22}));
 island.rotation.x=-Math.PI/2; island.position.y=0.1; scene.add(island);
 
-// player skin
+// speler skin
 let skin=skins.find(s=>s.name===currentSkin);
-if(skin.type==="cube"){
 player=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:skin.color}));
-}
-if(skin.type==="cylinder"){
-player=new THREE.Mesh(new THREE.CylinderGeometry(6,6,12),
-new THREE.MeshBasicMaterial({color:skin.color}));
-}
-if(skin.type==="cone"){
-player=new THREE.Mesh(new THREE.ConeGeometry(6,12,8),
-new THREE.MeshBasicMaterial({color:skin.color}));
-}
-if(skin.type==="rainbow"){
-player=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:Math.random()*0xffffff}));
-}
-if(skin.type==="rainbowCylinder"){
-player=new THREE.Mesh(new THREE.CylinderGeometry(6,6,12),
-new THREE.MeshBasicMaterial({color:Math.random()*0xffffff}));
-}
-if(skin.type==="monster"){
-player=new THREE.Mesh(new THREE.SphereGeometry(8),
-new THREE.MeshBasicMaterial({color:0x000000}));
-}
+new THREE.MeshBasicMaterial({color:skin.color || 0x00ffff}));
 
 player.position.y=6;
 scene.add(player);
-
-// bots
-let botCount=8;
-if(difficulty==="hard") botCount=14;
-if(difficulty==="impossible") botCount=21;
-
-for(let i=0;i<botCount;i++){
-let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0xffffff}));
-bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
-scene.add(bot); enemies.push(bot);
-}
 
 // controls
 document.addEventListener("keydown",e=>{
@@ -262,7 +229,7 @@ document.addEventListener("click",shoot);
 animate();
 }
 
-// --- SHOOT ---
+// shoot
 function shoot(){
 let b=new THREE.Mesh(new THREE.SphereGeometry(2),
 new THREE.MeshBasicMaterial({color:0xffffff}));
@@ -271,11 +238,12 @@ b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));
 scene.add(b); bullets.push(b);
 }
 
-// --- LOOP ---
+// loop
 function animate(){
 requestAnimationFrame(animate);
 if(!gameActive) return;
 
+// movement
 if(keys["z"]) player.position.z-=4;
 if(keys["s"]) player.position.z+=4;
 if(keys["q"]) player.position.x-=4;
@@ -288,6 +256,9 @@ endText.innerText="VERDRONKEN";
 gameOver.style.display="block";
 gameActive=false;
 }
+
+camera.position.set(player.position.x,25,player.position.z+40);
+camera.lookAt(player.position);
 
 renderer.render(scene,camera);
 }
