@@ -79,11 +79,14 @@ played.innerText=gamesPlayed;
 won.innerText=gamesWon;
 coinsTotal.innerText=totalCoins;
 
-// --- SKINS ---
+// --- SKINS (NIEUW TOEGEVOEGD) ---
 let skins=[
-{name:"blue",price:5,color:0x0066ff},
-{name:"red",price:5,color:0xff0000},
-{name:"gold",price:10,color:0xffcc00}
+{name:"blue",price:5,color:0x0066ff,type:"cube"},
+{name:"red",price:5,color:0xff0000,type:"cube"},
+{name:"gold",price:10,color:0xffcc00,type:"cube"},
+
+{name:"ster",price:20,type:"star"},
+{name:"wingdebo",price:30,type:"monster"}
 ];
 
 let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||["blue"];
@@ -92,6 +95,7 @@ let currentSkin=localStorage.getItem("currentSkin")||"blue";
 // --- SHOP ---
 shopButton.onclick=()=>{shopMenu.style.display="block";renderShop();}
 function closeShop(){shopMenu.style.display="none";}
+
 function renderShop(){
 let c=document.getElementById("skinsContainer");
 c.innerHTML="";
@@ -102,7 +106,8 @@ let btn=document.createElement("button");
 
 if(currentSkin===s.name){
 btn.innerText="ACTIEF";btn.className="active";
-}else if(ownedSkins.includes(s.name)){
+}
+else if(ownedSkins.includes(s.name)){
 btn.innerText="Gebruik";
 btn.onclick=()=>{
 currentSkin=s.name;
@@ -133,9 +138,37 @@ c.appendChild(div);
 let difficulty="easy";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinsArr=[];
-let keys={},yaw=0,hits=0,kills=0,coins=0,gameActive=false;
+let keys={},hits=0,kills=0,coins=0,gameActive=false;
 let islandRadius=600;
 let shootTimer=0,groupSize=3,shootInterval=120;
+
+// --- PLAYER MAKER ---
+function createPlayer(){
+let skin=skins.find(s=>s.name===currentSkin);
+let mesh;
+
+if(skin.type==="star"){
+mesh=new THREE.Mesh(
+new THREE.IcosahedronGeometry(8),
+new THREE.MeshBasicMaterial({color:0xffd700})
+);
+}
+else if(skin.type==="monster"){
+mesh=new THREE.Mesh(
+new THREE.SphereGeometry(8,16,16),
+new THREE.MeshBasicMaterial({color:0x000000})
+);
+}
+else{
+mesh=new THREE.Mesh(
+new THREE.BoxGeometry(8,12,8),
+new THREE.MeshBasicMaterial({color:skin.color})
+);
+}
+
+mesh.position.y=6;
+return mesh;
+}
 
 // start
 function chooseDifficulty(mode){
@@ -194,10 +227,7 @@ scene.add(c);coinsArr.push(c);
 }
 
 // speler
-let skin=skins.find(s=>s.name===currentSkin);
-player=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:skin.color}));
-player.position.y=6;
+player=createPlayer();
 scene.add(player);
 
 // difficulty
@@ -252,7 +282,7 @@ function animate(){
 requestAnimationFrame(animate);
 if(!gameActive) return;
 
-// movement pijltjes
+// movement
 if(keys["ArrowUp"]) player.position.z-=4;
 if(keys["ArrowDown"]) player.position.z+=4;
 if(keys["ArrowLeft"]) player.position.x-=4;
@@ -266,7 +296,7 @@ gameOver.style.display="block";
 gameActive=false;
 }
 
-// coins pakken
+// coins
 for(let i=coinsArr.length-1;i>=0;i--){
 if(player.position.distanceTo(coinsArr[i].position)<10){
 scene.remove(coinsArr[i]);
@@ -284,14 +314,14 @@ bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
 }
 }
 
-// speler bullets
+// player bullets
 for(let i=bullets.length-1;i>=0;i--){
 bullets[i].position.z-=10;
 for(let j=enemies.length-1;j>=0;j--){
 if(bullets[i].position.distanceTo(enemies[j].position)<8){
 scene.remove(enemies[j]);
 enemies.splice(j,1);
-kills++;kills.innerText=kills;
+kills++;document.getElementById("kills").innerText=kills;
 
 scene.remove(bullets[i]);
 bullets.splice(i,1);
@@ -329,7 +359,7 @@ shootTimer=0;
 for(let i=enemyBullets.length-1;i>=0;i--){
 enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
 if(enemyBullets[i].position.distanceTo(player.position)<8){
-hits++;hp.innerText=hits;
+hits++;document.getElementById("hp").innerText=hits;
 scene.remove(enemyBullets[i]);
 enemyBullets.splice(i,1);
 if(hits>=3){
@@ -340,7 +370,6 @@ gameActive=false;
 }
 }
 
-// camera
 camera.position.set(player.position.x,25,player.position.z+40);
 camera.lookAt(player.position);
 
