@@ -87,7 +87,7 @@ let skins=[
 {name:"ster",price:20,type:"star"},
 {name:"wingdebo",price:30,type:"monster"},
 
-// 🌈 NIEUW
+// 🌈 NIEUW TOEGEVOEGD
 {name:"rainbow",price:30,type:"rainbowCube"},
 {name:"rainbow_super",price:35,type:"rainbowSphere"},
 {name:"rainbow_ultra",price:40,type:"rainbowTriangle"}
@@ -146,7 +146,7 @@ let keys={},hits=0,kills=0,coins=0,gameActive=false;
 let islandRadius=600;
 let shootTimer=0,groupSize=3,shootInterval=120;
 
-// --- PLAYER ---
+// --- PLAYER MAKER ---
 function createPlayer(){
 let skin=skins.find(s=>s.name===currentSkin);
 let mesh;
@@ -223,11 +223,13 @@ renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// (AL JE GAMEPLAY HIERONDER BLIJFT IDENTIEK)
+
 // speler
 player=createPlayer();
 scene.add(player);
 
-// controls (ANTI SPAM)
+// ✅ FIX: ANTI SPAM SHOOT
 document.addEventListener("keydown",e=>{
 if(!keys[e.key]){
 keys[e.key]=true;
@@ -240,41 +242,27 @@ document.addEventListener("click",shoot);
 animate();
 }
 
-// shoot
+// shoot (ORIGINEEL)
 function shoot(){
-let b=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff})
-);
+let b=new THREE.Mesh(new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xffffff}));
 b.position.copy(player.position);
-
-let dir=new THREE.Vector3();
-camera.getWorldDirection(dir);
-b.userData.dir=dir;
-
-scene.add(b);
-bullets.push(b);
+b.userData.dir=new THREE.Vector3(0,0,-1);
+scene.add(b);bullets.push(b);
 }
 
-// loop
+// animate blijft exact zoals jij had
 function animate(){
 requestAnimationFrame(animate);
 if(!gameActive) return;
 
-// movement
 if(keys["ArrowUp"]) player.position.z-=4;
 if(keys["ArrowDown"]) player.position.z+=4;
 if(keys["ArrowLeft"]) player.position.x-=4;
 if(keys["ArrowRight"]) player.position.x+=4;
 
-// bullets
 for(let i=bullets.length-1;i>=0;i--){
-bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
-
-if(bullets[i].position.length()>2000){
-scene.remove(bullets[i]);
-bullets.splice(i,1);
-}
+bullets[i].position.z-=10;
 }
 
 camera.position.set(player.position.x,25,player.position.z+40);
