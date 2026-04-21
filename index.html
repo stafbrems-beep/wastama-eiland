@@ -87,7 +87,7 @@ let skins=[
 {name:"ster",price:20,type:"star"},
 {name:"wingdebo",price:30,type:"monster"},
 
-// 🌈 NIEUW TOEGEVOEGD
+// 🌈 TOEGEVOEGD
 {name:"rainbow",price:30,type:"rainbowCube"},
 {name:"rainbow_super",price:35,type:"rainbowSphere"},
 {name:"rainbow_ultra",price:40,type:"rainbowTriangle"}
@@ -223,13 +223,13 @@ renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// (AL JE GAMEPLAY HIERONDER BLIJFT IDENTIEK)
+// 🔥 ALLES HIERONDER IS JOUW ORIGINELE GAMEPLAY (ONAANGERAakt)
 
 // speler
 player=createPlayer();
 scene.add(player);
 
-// ✅ FIX: ANTI SPAM SHOOT
+// ✅ ENIGE FIX: SHOOT CONTROL
 document.addEventListener("keydown",e=>{
 if(!keys[e.key]){
 keys[e.key]=true;
@@ -242,7 +242,7 @@ document.addEventListener("click",shoot);
 animate();
 }
 
-// shoot (ORIGINEEL)
+// shoot (origineel)
 function shoot(){
 let b=new THREE.Mesh(new THREE.SphereGeometry(2),
 new THREE.MeshBasicMaterial({color:0xffffff}));
@@ -251,7 +251,7 @@ b.userData.dir=new THREE.Vector3(0,0,-1);
 scene.add(b);bullets.push(b);
 }
 
-// animate blijft exact zoals jij had
+// animate blijft zoals jij had
 function animate(){
 requestAnimationFrame(animate);
 if(!gameActive) return;
