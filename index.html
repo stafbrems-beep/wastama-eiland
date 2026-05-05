@@ -15,6 +15,20 @@ text-align:center;z-index:5;
 #hud{position:absolute;top:60px;left:20px;display:none;z-index:5;}
 #stats{position:absolute;top:10px;left:20px;z-index:5;}
 
+#shopButton{
+position:absolute;top:10px;right:20px;
+background:#444;padding:10px;cursor:pointer;z-index:5;
+}
+
+#shopMenu{
+display:none;position:fixed;top:0;left:0;
+width:100%;height:100%;
+background:black;z-index:999;padding:20px;
+overflow-y:auto;
+}
+
+.skin{background:#222;padding:10px;margin:10px;border:2px solid white;}
+.active{background:yellow;color:black;}
 button{padding:10px;margin:5px;}
 </style>
 </head>
@@ -23,6 +37,16 @@ button{padding:10px;margin:5px;}
 <div id="stats">
 <div>Games gespeeld: <span id="played">0</span></div>
 <div>Games gewonnen: <span id="won">0</span></div>
+<div>Munten totaal: <span id="coinsTotal">0</span></div>
+</div>
+
+<div id="shopButton">SHOP</div>
+
+<div id="shopMenu">
+<div style="position:absolute;right:20px;top:20px;font-size:30px;cursor:pointer"
+onclick="closeShop()">✖</div>
+<h1>SHOP</h1>
+<div id="skinsContainer"></div>
 </div>
 
 <div id="difficultyMenu">
@@ -50,47 +74,94 @@ button{padding:10px;margin:5px;}
 // --- STATS ---
 let gamesPlayed = parseInt(localStorage.getItem("played"))||0;
 let gamesWon = parseInt(localStorage.getItem("won"))||0;
+let totalCoins = parseInt(localStorage.getItem("coins"))||0;
 played.innerText=gamesPlayed;
 won.innerText=gamesWon;
+coinsTotal.innerText=totalCoins;
+
+// --- SKINS ---
+let skins=[
+{name:"blue",price:5,color:0x0066ff,type:"cube"},
+{name:"red",price:5,color:0xff0000,type:"cube"},
+{name:"gold",price:10,color:0xffcc00,type:"cube"},
+{name:"ster",price:20,type:"star"},
+{name:"wingdebo",price:30,type:"monster"},
+{name:"rainbow",price:30,type:"rainbowCube"},
+{name:"rainbow_super",price:35,type:"rainbowSphere"},
+{name:"rainbow_ultra",price:40,type:"rainbowTriangle"}
+];
+
+let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||["blue"];
+let currentSkin=localStorage.getItem("currentSkin")||"blue";
+
+// --- SHOP ---
+shopButton.onclick=()=>{shopMenu.style.display="block";renderShop();}
+function closeShop(){shopMenu.style.display="none";}
+
+function renderShop(){
+let c=document.getElementById("skinsContainer");
+c.innerHTML="";
+skins.forEach(s=>{
+let div=document.createElement("div");
+div.className="skin";
+let btn=document.createElement("button");
+
+if(currentSkin===s.name){
+btn.innerText="ACTIEF";btn.className="active";
+}
+else if(ownedSkins.includes(s.name)){
+btn.innerText="Gebruik";
+btn.onclick=()=>{
+currentSkin=s.name;
+localStorage.setItem("currentSkin",currentSkin);
+renderShop();
+};
+}else{
+btn.innerText="Koop ("+s.price+")";
+btn.onclick=()=>{
+if(totalCoins>=s.price){
+totalCoins-=s.price;
+coinsTotal.innerText=totalCoins;
+localStorage.setItem("coins",totalCoins);
+ownedSkins.push(s.name);
+localStorage.setItem("ownedSkins",JSON.stringify(ownedSkins));
+renderShop();
+}
+};
+}
+
+div.innerHTML="<b>"+s.name+"</b><br>";
+div.appendChild(btn);
+c.appendChild(div);
+});
+}
 
 // --- GAME ---
 let difficulty="easy";
 let scene,camera,renderer,player;
-let enemies=[],bullets=[],enemyBullets=[],coinsArr=[],buildings=[];
+let enemies=[],bullets=[],enemyBullets=[],coinsArr=[];
 let keys={},hits=0,kills=0,coins=0,gameActive=false;
-let islandRadius=1200;
-
+let islandRadius=1200; // groter
 let shootTimer=0,groupSize=3,shootInterval=120;
-let smartBots=2;
 
-// --- PLAYER ---
+// PLAYER
 function createPlayer(){
-let mesh=new THREE.Mesh(
+return new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0x00ff00})
 );
-mesh.position.y=6;
-return mesh;
 }
 
-// --- START ---
+// START
 function chooseDifficulty(mode){
 difficulty=mode;
-
-if(mode==="easy"){smartBots=2;groupSize=3;shootInterval=120;}
-if(mode==="hard"){smartBots=3;groupSize=5;shootInterval=60;}
-if(mode==="impossible"){smartBots=5;groupSize=7;shootInterval=30;}
-
 difficultyMenu.style.display="none";
 startGame();
 }
 
 function startGame(){
-
-gamesPlayed++;
-localStorage.setItem("played",gamesPlayed);
+gamesPlayed++;localStorage.setItem("played",gamesPlayed);
 played.innerText=gamesPlayed;
-
 hud.style.display="block";
 gameActive=true;
 
@@ -100,15 +171,7 @@ renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 🌊 zee
-let sea=new THREE.Mesh(
-new THREE.CircleGeometry(4000,64),
-new THREE.MeshBasicMaterial({color:0x1e90ff})
-);
-sea.rotation.x=-Math.PI/2;
-scene.add(sea);
-
-// 🏝 eiland
+// 🌍 GEEN ZEE MEER → alleen eiland
 let island=new THREE.Mesh(
 new THREE.CircleGeometry(1200,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
@@ -116,38 +179,30 @@ new THREE.MeshBasicMaterial({color:0x228B22})
 island.rotation.x=-Math.PI/2;
 scene.add(island);
 
-// 🌳 bomen
+// 🌳 BOMEN
 for(let i=0;i<40;i++){
-let trunk=new THREE.Mesh(
-new THREE.CylinderGeometry(3,3,25),
-new THREE.MeshBasicMaterial({color:0x8b4513})
-);
-let leaves=new THREE.Mesh(
-new THREE.ConeGeometry(15,35,10),
-new THREE.MeshBasicMaterial({color:0x228B22})
-);
-
+let t=new THREE.Mesh(new THREE.CylinderGeometry(3,3,25),
+new THREE.MeshBasicMaterial({color:0x8b4513}));
+let l=new THREE.Mesh(new THREE.ConeGeometry(15,35,10),
+new THREE.MeshBasicMaterial({color:0x228B22}));
 let x=(Math.random()-0.5)*2000;
 let z=(Math.random()-0.5)*2000;
-
-trunk.position.set(x,12,z);
-leaves.position.set(x,40,z);
-
-scene.add(trunk,leaves);
+t.position.set(x,12,z);
+l.position.set(x,40,z);
+scene.add(t,l);
 }
 
-// 🏢 gebouwen
-for(let i=0;i<25;i++){
+// 🏢 GEBOUWEN
+for(let i=0;i<20;i++){
 let b=new THREE.Mesh(
 new THREE.BoxGeometry(60,120,60),
 new THREE.MeshBasicMaterial({color:0x555555})
 );
 b.position.set((Math.random()-0.5)*1800,60,(Math.random()-0.5)*1800);
 scene.add(b);
-buildings.push(b);
 }
 
-// 🪙 coins
+// coins
 for(let i=0;i<15;i++){
 let c=new THREE.Mesh(
 new THREE.CylinderGeometry(4,4,2,16),
@@ -155,34 +210,28 @@ new THREE.MeshBasicMaterial({color:0xffff00})
 );
 c.rotation.x=Math.PI/2;
 c.position.set((Math.random()-0.5)*1000,6,(Math.random()-0.5)*1000);
-scene.add(c);
-coinsArr.push(c);
+scene.add(c);coinsArr.push(c);
 }
 
 // speler
 player=createPlayer();
+player.position.y=6;
 scene.add(player);
 
-// 🤖 bots
+// bots
 let botCount=9;
 if(difficulty==="hard") botCount=15;
 if(difficulty==="impossible") botCount=22;
 
 for(let i=0;i<botCount;i++){
-let bot=new THREE.Mesh(
-new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0xffffff})
-);
-
+let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
+new THREE.MeshBasicMaterial({color:0xffffff}));
 bot.position.set((Math.random()-0.5)*1000,6,(Math.random()-0.5)*1000);
 bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
-bot.userData.smart = i < smartBots;
-
-scene.add(bot);
-enemies.push(bot);
+scene.add(bot);enemies.push(bot);
 }
 
-// input (1 shot per press)
+// input
 document.addEventListener("keydown",e=>{
 if(!keys[e.key]){
 keys[e.key]=true;
@@ -195,32 +244,26 @@ document.addEventListener("click",shoot);
 animate();
 }
 
-// 🔫 shoot
+// shoot
 function shoot(){
-let b=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff})
-);
+let b=new THREE.Mesh(new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xffffff}));
 b.position.copy(player.position);
 b.userData.dir=new THREE.Vector3(0,0,-1);
-scene.add(b);
-bullets.push(b);
+scene.add(b);bullets.push(b);
 }
 
-// 🤖 bot shoot
+// bot shoot
 function shootBot(bot){
 let dir=player.position.clone().sub(bot.position).normalize();
-let b=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000})
-);
+let b=new THREE.Mesh(new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xff0000}));
 b.position.copy(bot.position);
 b.userData.dir=dir;
-scene.add(b);
-enemyBullets.push(b);
+scene.add(b);enemyBullets.push(b);
 }
 
-// 🎬 loop
+// LOOP
 function animate(){
 requestAnimationFrame(animate);
 if(!gameActive) return;
@@ -231,7 +274,7 @@ if(keys["ArrowDown"]) player.position.z+=4;
 if(keys["ArrowLeft"]) player.position.x-=4;
 if(keys["ArrowRight"]) player.position.x+=4;
 
-// rand check
+// rand
 let dist=Math.sqrt(player.position.x**2+player.position.z**2);
 if(dist>islandRadius){
 endText.innerText="VERDRONKEN";
@@ -239,10 +282,7 @@ gameOver.style.display="block";
 gameActive=false;
 }
 
-// coins draaien
-coinsArr.forEach(c=>c.rotation.y+=0.1);
-
-// coins pakken
+// coins
 for(let i=coinsArr.length-1;i>=0;i--){
 if(player.position.distanceTo(coinsArr[i].position)<10){
 scene.remove(coinsArr[i]);
@@ -252,20 +292,9 @@ document.getElementById("coins").innerText=coins;
 }
 }
 
-// bots
+// bots bewegen
 for(let bot of enemies){
-
-if(bot.userData.smart && Math.random()<0.01){
-// naar gebouw
-let b=buildings[Math.floor(Math.random()*buildings.length)];
-if(b){
-let dir=b.position.clone().sub(bot.position).normalize();
-bot.position.add(dir.multiplyScalar(0.6));
-}
-}else{
 bot.position.add(bot.userData.dir.clone().multiplyScalar(0.5));
-}
-
 if(Math.random()<0.02){
 bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
 }
@@ -279,9 +308,7 @@ for(let j=enemies.length-1;j>=0;j--){
 if(bullets[i].position.distanceTo(enemies[j].position)<8){
 scene.remove(enemies[j]);
 enemies.splice(j,1);
-
-kills++;
-document.getElementById("kills").innerText=kills;
+kills++;document.getElementById("kills").innerText=kills;
 
 scene.remove(bullets[i]);
 bullets.splice(i,1);
@@ -303,14 +330,10 @@ shootTimer=0;
 // enemy bullets
 for(let i=enemyBullets.length-1;i>=0;i--){
 enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
-
 if(enemyBullets[i].position.distanceTo(player.position)<8){
-hits++;
-document.getElementById("hp").innerText=hits;
-
+hits++;document.getElementById("hp").innerText=hits;
 scene.remove(enemyBullets[i]);
 enemyBullets.splice(i,1);
-
 if(hits>=3){
 endText.innerText="GAME OVER";
 gameOver.style.display="block";
@@ -319,7 +342,6 @@ gameActive=false;
 }
 }
 
-// camera
 camera.position.set(player.position.x,25,player.position.z+40);
 camera.lookAt(player.position);
 
