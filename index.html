@@ -2,227 +2,136 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>WASTAMA EILAND</title>
+<title>WASTAMA EILAND V2</title>
 <style>
 body{margin:0;overflow:hidden;background:black;color:white;font-family:Arial;}
-
+#hud{position:absolute;top:10px;left:10px;z-index:5;}
 #difficultyMenu,#gameOver{
 position:absolute;top:40%;left:50%;
 transform:translate(-50%,-50%);
 text-align:center;z-index:5;
 }
-
-#hud{position:absolute;top:60px;left:20px;display:none;z-index:5;}
-#stats{position:absolute;top:10px;left:20px;z-index:5;}
-
-#shopButton{
-position:absolute;top:10px;right:20px;
-background:#444;padding:10px;cursor:pointer;z-index:5;
-}
-
-#shopMenu{
-display:none;position:fixed;top:0;left:0;
-width:100%;height:100%;
-background:black;z-index:999;padding:20px;
-overflow-y:auto;
-}
-
-.skin{background:#222;padding:10px;margin:10px;border:2px solid white;}
-.active{background:yellow;color:black;}
 button{padding:10px;margin:5px;}
 
-#hp{font-weight:bold;}
+/* 🎯 crosshair */
+#crosshair{
+position:absolute;
+top:50%;left:50%;
+width:10px;height:10px;
+margin-left:-5px;margin-top:-5px;
+border:2px solid white;
+border-radius:50%;
+z-index:10;
+}
 </style>
 </head>
 <body>
 
-<div id="stats">
-<div>Games gespeeld: <span id="played">0</span></div>
-<div>Games gewonnen: <span id="won">0</span></div>
-<div>Munten totaal: <span id="coinsTotal">0</span></div>
-</div>
+<div id="crosshair"></div>
 
-<div id="shopButton">SHOP</div>
-
-<div id="shopMenu">
-<div style="position:absolute;right:20px;top:20px;font-size:30px;cursor:pointer"
-onclick="closeShop()">✖</div>
-<h1>SHOP</h1>
-<div>Jouw munten: <span id="shopCoins"></span></div>
-<div id="skinsContainer"></div>
+<div id="hud">
+HP: <span id="hp">0</span>/3 |
+Kills: <span id="kills">0</span>
 </div>
 
 <div id="difficultyMenu">
-<h1>Kies moeilijkheid</h1>
-<button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
-<button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
-<button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
-</div>
-
-<div id="hud">
-<div>Hits: <span id="hp">0</span> / 3</div>
-<div>Gedood: <span id="kills">0</span></div>
-<div>Munten: <span id="coins">0</span></div>
+<h1>Difficulty</h1>
+<button onclick="chooseDifficulty('easy')">Easy</button>
+<button onclick="chooseDifficulty('hard')">Hard</button>
+<button onclick="chooseDifficulty('impossible')">Impossible</button>
 </div>
 
 <div id="gameOver" style="display:none">
 <h1 id="endText"></h1>
-<button onclick="location.reload()">Opnieuw spelen</button>
+<button onclick="location.reload()">Restart</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 
-// --- STATS ---
-let gamesPlayed = parseInt(localStorage.getItem("played"))||0;
-let gamesWon = parseInt(localStorage.getItem("won"))||0;
-let totalCoins = parseInt(localStorage.getItem("coins"))||0;
-played.innerText=gamesPlayed;
-won.innerText=gamesWon;
-coinsTotal.innerText=totalCoins;
-
-// --- SKINS ---
-let skins=[
-{name:"blue",price:5,color:0x0066ff,type:"cube"},
-{name:"red",price:5,color:0xff0000,type:"cube"},
-{name:"gold",price:10,color:0xffcc00,type:"cube"},
-{name:"ster",price:20,type:"star"},
-{name:"wingdebo",price:30,type:"monster"},
-{name:"rainbow",price:30,type:"rainbowCube"},
-{name:"rainbow_super",price:35,type:"rainbowSphere"},
-{name:"rainbow_ultra",price:40,type:"rainbowTriangle"}
-];
-
-let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||["blue"];
-let currentSkin=localStorage.getItem("currentSkin")||"blue";
-
-// --- SHOP ---
-shopButton.onclick=()=>{shopMenu.style.display="block";renderShop();}
-function closeShop(){shopMenu.style.display="none";}
-
-function renderShop(){
-let c=document.getElementById("skinsContainer");
-c.innerHTML="";
-document.getElementById("shopCoins").innerText = totalCoins;
-
-skins.forEach(s=>{
-let div=document.createElement("div");
-div.className="skin";
-let btn=document.createElement("button");
-
-if(currentSkin===s.name){
-btn.innerText="ACTIEF";btn.className="active";
-}
-else if(ownedSkins.includes(s.name)){
-btn.innerText="Gebruik";
-btn.onclick=()=>{
-currentSkin=s.name;
-localStorage.setItem("currentSkin",currentSkin);
-renderShop();
-};
-}else{
-btn.innerText="Koop ("+s.price+")";
-btn.onclick=()=>{
-if(totalCoins>=s.price){
-totalCoins-=s.price;
-coinsTotal.innerText=totalCoins;
-localStorage.setItem("coins",totalCoins);
-ownedSkins.push(s.name);
-localStorage.setItem("ownedSkins",JSON.stringify(ownedSkins));
-renderShop();
-}
-};
-}
-
-div.innerHTML="<b>"+s.name+"</b><br>";
-div.appendChild(btn);
-c.appendChild(div);
-});
-}
-
-// --- GAME ---
+let scene,camera,renderer,player;
+let enemies=[],bullets=[],enemyBullets=[],buildings=[];
+let keys={},hits=0,kills=0;
 let difficulty="easy";
-let scene,camera,renderer,player,canvas;
-let enemies=[],bullets=[],enemyBullets=[],coinsArr=[];
-let keys={},hits=0,kills=0,coins=0,gameActive=false;
-let islandRadius=600;
-let shootTimer=0,groupSize=3,shootInterval=120;
+let smartBots=2;
+let shootCooldown=0;
 
-// --- PLAYER ---
-function createPlayer(){
-let skin=skins.find(s=>s.name===currentSkin);
-let mesh;
-
-if(skin.type==="rainbowTriangle"){
-let geo = new THREE.ConeGeometry(8,12,3);
-let colors=[];
-for(let i=0;i<geo.attributes.position.count;i++){
-colors.push(Math.random(),Math.random(),Math.random());
-}
-geo.setAttribute("color", new THREE.Float32BufferAttribute(colors,3));
-mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({vertexColors:true}));
-}
-else{
-mesh=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:skin.color||0xffffff}));
-}
-
-mesh.position.y=6;
-return mesh;
-}
-
-function chooseDifficulty(mode){
-difficulty=mode;
+function chooseDifficulty(d){
+difficulty=d;
+if(d==="easy") smartBots=2;
+if(d==="hard") smartBots=3;
+if(d==="impossible") smartBots=5;
 difficultyMenu.style.display="none";
 startGame();
 }
 
 function startGame(){
-gamesPlayed++;localStorage.setItem("played",gamesPlayed);
-played.innerText=gamesPlayed;
-hud.style.display="block";
-gameActive=true;
-
-if(canvas) canvas.remove();
 
 scene=new THREE.Scene();
-camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,2000);
+camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,4000);
 renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
-canvas = renderer.domElement;
-document.body.appendChild(canvas);
+document.body.appendChild(renderer.domElement);
 
-// wereld
-let sea=new THREE.Mesh(new THREE.CircleGeometry(2000,64),
-new THREE.MeshBasicMaterial({color:0x1e90ff}));
-sea.rotation.x=-Math.PI/2;scene.add(sea);
+// 🌍 MAP
+let ground=new THREE.Mesh(
+new THREE.CircleGeometry(2000,64),
+new THREE.MeshBasicMaterial({color:0x228B22})
+);
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
 
-let island=new THREE.Mesh(new THREE.CircleGeometry(600,64),
-new THREE.MeshBasicMaterial({color:0x228B22}));
-island.rotation.x=-Math.PI/2;island.position.y=0.1;scene.add(island);
-
-// coins
-for(let i=0;i<10;i++){
-let c=new THREE.Mesh(new THREE.CylinderGeometry(4,4,2,16),
-new THREE.MeshBasicMaterial({color:0xffff00}));
-c.rotation.x=Math.PI/2;
-c.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
-scene.add(c);coinsArr.push(c);
+// 🏢 BUILDINGS
+for(let i=0;i<30;i++){
+let b=new THREE.Mesh(
+new THREE.BoxGeometry(60,120,60),
+new THREE.MeshBasicMaterial({color:0x555555})
+);
+b.position.set((Math.random()-0.5)*3000,60,(Math.random()-0.5)*3000);
+scene.add(b);
+buildings.push(b);
 }
 
-// speler
-player=createPlayer();
+// 🌳 BOMEN
+for(let i=0;i<50;i++){
+let t=new THREE.Mesh(
+new THREE.CylinderGeometry(2,2,20),
+new THREE.MeshBasicMaterial({color:0x8b4513})
+);
+let l=new THREE.Mesh(
+new THREE.ConeGeometry(12,30,8),
+new THREE.MeshBasicMaterial({color:0x228B22})
+);
+let x=(Math.random()-0.5)*3000;
+let z=(Math.random()-0.5)*3000;
+t.position.set(x,10,z);
+l.position.set(x,30,z);
+scene.add(t,l);
+}
+
+// 🧍 PLAYER
+player=new THREE.Mesh(
+new THREE.BoxGeometry(10,15,10),
+new THREE.MeshBasicMaterial({color:0x00ff00})
+);
+player.position.y=8;
 scene.add(player);
 
-// bots
-for(let i=0;i<10;i++){
-let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0xffffff}));
-bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
-scene.add(bot);enemies.push(bot);
+// 🤖 ENEMIES
+for(let i=0;i<25;i++){
+let bot=new THREE.Mesh(
+new THREE.BoxGeometry(10,15,10),
+new THREE.MeshBasicMaterial({color:0xffffff})
+);
+bot.position.set((Math.random()-0.5)*2000,8,(Math.random()-0.5)*2000);
+bot.userData.smart=i<smartBots;
+bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
+scene.add(bot);
+enemies.push(bot);
 }
 
+// 🎮 INPUT
 document.addEventListener("keydown",e=>{
 if(!keys[e.key]){
 keys[e.key]=true;
@@ -235,55 +144,142 @@ document.addEventListener("click",shoot);
 animate();
 }
 
+// 🔫 SHOOT (cooldown)
 function shoot(){
-let b=new THREE.Mesh(new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff}));
+if(shootCooldown>0) return;
 
+shootCooldown=10;
+
+let b=new THREE.Mesh(
+new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xffffff})
+);
 b.position.copy(player.position);
 
-let dir = new THREE.Vector3();
+let dir=new THREE.Vector3();
 camera.getWorldDirection(dir);
-
-b.userData.dir = dir;
+b.userData.dir=dir;
 
 scene.add(b);
 bullets.push(b);
 }
 
+// 💥 EXPLOSIE
+function explode(pos){
+let e=new THREE.Mesh(
+new THREE.SphereGeometry(5),
+new THREE.MeshBasicMaterial({color:0xff0000})
+);
+e.position.copy(pos);
+scene.add(e);
+
+setTimeout(()=>scene.remove(e),200);
+}
+
+// 🤖 BOT SHOOT
+function shootBot(bot){
+let dir=player.position.clone().sub(bot.position).normalize();
+
+let b=new THREE.Mesh(
+new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xff0000})
+);
+b.position.copy(bot.position);
+b.userData.dir=dir;
+
+scene.add(b);
+enemyBullets.push(b);
+}
+
+// 🎬 LOOP
 function animate(){
 requestAnimationFrame(animate);
-if(!gameActive) return;
 
-// movement fix
-let moveX=0,moveZ=0;
-if(keys["ArrowUp"]) moveZ--;
-if(keys["ArrowDown"]) moveZ++;
-if(keys["ArrowLeft"]) moveX--;
-if(keys["ArrowRight"]) moveX++;
+// cooldown
+if(shootCooldown>0) shootCooldown--;
 
-let len=Math.sqrt(moveX*moveX+moveZ*moveZ);
-if(len>0){moveX/=len;moveZ/=len;}
+// movement
+let mx=0,mz=0;
+if(keys["ArrowUp"]) mz--;
+if(keys["ArrowDown"]) mz++;
+if(keys["ArrowLeft"]) mx--;
+if(keys["ArrowRight"]) mx++;
 
-player.position.x+=moveX*4;
-player.position.z+=moveZ*4;
+let len=Math.sqrt(mx*mx+mz*mz);
+if(len>0){mx/=len;mz/=len;}
 
-// coins draaien
-coinsArr.forEach(c=>c.rotation.y+=0.1);
+player.position.x+=mx*5;
+player.position.z+=mz*5;
 
-// bots volgen speler
+// 🤖 bots
 for(let bot of enemies){
-let dir = player.position.clone().sub(bot.position).normalize();
+
+if(bot.userData.smart){
+
+// cover systeem
+let target=player.position.clone();
+
+// soms cover zoeken
+if(Math.random()<0.005){
+let b=buildings[Math.floor(Math.random()*buildings.length)];
+if(b) target=b.position;
+}
+
+let dir=target.clone().sub(bot.position).normalize();
 bot.position.add(dir.multiplyScalar(0.7));
+
+if(Math.random()<0.02) shootBot(bot);
+
+}else{
+bot.position.add(bot.userData.dir.clone().multiplyScalar(0.5));
+if(Math.random()<0.02){
+bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
+}
+}
 }
 
 // bullets
-for(let b of bullets){
-b.position.add(b.userData.dir.clone().multiplyScalar(10));
+for(let i=bullets.length-1;i>=0;i--){
+bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(12));
+
+for(let j=enemies.length-1;j>=0;j--){
+if(bullets[i].position.distanceTo(enemies[j].position)<10){
+explode(enemies[j].position);
+
+scene.remove(enemies[j]);
+enemies.splice(j,1);
+
+kills++;
+document.getElementById("kills").innerText=kills;
+
+scene.remove(bullets[i]);
+bullets.splice(i,1);
+break;
+}
+}
 }
 
-// camera smooth
+// enemy bullets
+for(let i=enemyBullets.length-1;i>=0;i--){
+enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
+
+if(enemyBullets[i].position.distanceTo(player.position)<10){
+hits++;
+document.getElementById("hp").innerText=hits;
+
+scene.remove(enemyBullets[i]);
+enemyBullets.splice(i,1);
+
+if(hits>=3){
+endText.innerText="GAME OVER";
+gameOver.style.display="block";
+}
+}
+}
+
+// camera
 camera.position.lerp(
-new THREE.Vector3(player.position.x,25,player.position.z+40),
+new THREE.Vector3(player.position.x,40,player.position.z+60),
 0.1
 );
 camera.lookAt(player.position);
