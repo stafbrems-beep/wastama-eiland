@@ -83,12 +83,7 @@ coinsTotal.innerText=totalCoins;
 let skins=[
 {name:"blue",price:5,color:0x0066ff,type:"cube"},
 {name:"red",price:5,color:0xff0000,type:"cube"},
-{name:"gold",price:10,color:0xffcc00,type:"cube"},
-{name:"ster",price:20,type:"star"},
-{name:"wingdebo",price:30,type:"monster"},
-{name:"rainbow",price:30,type:"rainbowCube"},
-{name:"rainbow_super",price:35,type:"rainbowSphere"},
-{name:"rainbow_ultra",price:40,type:"rainbowTriangle"}
+{name:"gold",price:10,color:0xffcc00,type:"cube"}
 ];
 
 let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||["blue"];
@@ -141,14 +136,17 @@ let difficulty="easy";
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinsArr=[];
 let keys={},hits=0,kills=0,coins=0,gameActive=false;
-let islandRadius=1200; // groter
-let shootTimer=0,groupSize=3,shootInterval=120;
+let islandRadius=1200;
 
-// PLAYER
+// camera
+let yaw=0,pitch=0,mouseDown=false;
+
+// --- PLAYER ---
 function createPlayer(){
+let skin=skins.find(s=>s.name===currentSkin);
 return new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0x00ff00})
+new THREE.MeshBasicMaterial({color:skin.color})
 );
 }
 
@@ -160,8 +158,10 @@ startGame();
 }
 
 function startGame(){
-gamesPlayed++;localStorage.setItem("played",gamesPlayed);
+gamesPlayed++;
+localStorage.setItem("played",gamesPlayed);
 played.innerText=gamesPlayed;
+
 hud.style.display="block";
 gameActive=true;
 
@@ -171,7 +171,7 @@ renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 🌍 GEEN ZEE MEER → alleen eiland
+// eiland
 let island=new THREE.Mesh(
 new THREE.CircleGeometry(1200,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
@@ -179,7 +179,7 @@ new THREE.MeshBasicMaterial({color:0x228B22})
 island.rotation.x=-Math.PI/2;
 scene.add(island);
 
-// 🌳 BOMEN
+// bomen
 for(let i=0;i<40;i++){
 let t=new THREE.Mesh(new THREE.CylinderGeometry(3,3,25),
 new THREE.MeshBasicMaterial({color:0x8b4513}));
@@ -192,7 +192,7 @@ l.position.set(x,40,z);
 scene.add(t,l);
 }
 
-// 🏢 GEBOUWEN
+// gebouwen
 for(let i=0;i<20;i++){
 let b=new THREE.Mesh(
 new THREE.BoxGeometry(60,120,60),
@@ -210,7 +210,8 @@ new THREE.MeshBasicMaterial({color:0xffff00})
 );
 c.rotation.x=Math.PI/2;
 c.position.set((Math.random()-0.5)*1000,6,(Math.random()-0.5)*1000);
-scene.add(c);coinsArr.push(c);
+scene.add(c);
+coinsArr.push(c);
 }
 
 // speler
@@ -228,10 +229,11 @@ let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:0xffffff}));
 bot.position.set((Math.random()-0.5)*1000,6,(Math.random()-0.5)*1000);
 bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
-scene.add(bot);enemies.push(bot);
+scene.add(bot);
+enemies.push(bot);
 }
 
-// input
+// INPUT
 document.addEventListener("keydown",e=>{
 if(!keys[e.key]){
 keys[e.key]=true;
@@ -241,16 +243,30 @@ if(e.code==="Space") shoot();
 document.addEventListener("keyup",e=>keys[e.key]=false);
 document.addEventListener("click",shoot);
 
+// mouse look
+document.addEventListener("mousedown",()=>mouseDown=true);
+document.addEventListener("mouseup",()=>mouseDown=false);
+
+document.addEventListener("mousemove",(e)=>{
+if(!mouseDown) return;
+yaw -= e.movementX * 0.002;
+pitch -= e.movementY * 0.002;
+pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
+});
+
 animate();
 }
 
 // shoot
 function shoot(){
-let b=new THREE.Mesh(new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff}));
+let b=new THREE.Mesh(
+new THREE.SphereGeometry(2),
+new THREE.MeshBasicMaterial({color:0xffffff})
+);
 b.position.copy(player.position);
-b.userData.dir=new THREE.Vector3(0,0,-1);
-scene.add(b);bullets.push(b);
+b.userData.dir=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+scene.add(b);
+bullets.push(b);
 }
 
 // bot shoot
@@ -260,7 +276,8 @@ let b=new THREE.Mesh(new THREE.SphereGeometry(2),
 new THREE.MeshBasicMaterial({color:0xff0000}));
 b.position.copy(bot.position);
 b.userData.dir=dir;
-scene.add(b);enemyBullets.push(b);
+scene.add(b);
+enemyBullets.push(b);
 }
 
 // LOOP
@@ -292,7 +309,7 @@ document.getElementById("coins").innerText=coins;
 }
 }
 
-// bots bewegen
+// bots
 for(let bot of enemies){
 bot.position.add(bot.userData.dir.clone().multiplyScalar(0.5));
 if(Math.random()<0.02){
@@ -302,13 +319,14 @@ bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
 
 // bullets
 for(let i=bullets.length-1;i>=0;i--){
-bullets[i].position.z-=10;
+bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
 
 for(let j=enemies.length-1;j>=0;j--){
 if(bullets[i].position.distanceTo(enemies[j].position)<8){
 scene.remove(enemies[j]);
 enemies.splice(j,1);
-kills++;document.getElementById("kills").innerText=kills;
+kills++;
+document.getElementById("kills").innerText=kills;
 
 scene.remove(bullets[i]);
 bullets.splice(i,1);
@@ -318,22 +336,22 @@ break;
 }
 
 // bots schieten
-shootTimer++;
-if(shootTimer>shootInterval){
-for(let i=0;i<groupSize;i++){
+if(Math.random()<0.02){
 let bot=enemies[Math.floor(Math.random()*enemies.length)];
 if(bot) shootBot(bot);
-}
-shootTimer=0;
 }
 
 // enemy bullets
 for(let i=enemyBullets.length-1;i>=0;i--){
 enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
+
 if(enemyBullets[i].position.distanceTo(player.position)<8){
-hits++;document.getElementById("hp").innerText=hits;
+hits++;
+document.getElementById("hp").innerText=hits;
+
 scene.remove(enemyBullets[i]);
 enemyBullets.splice(i,1);
+
 if(hits>=3){
 endText.innerText="GAME OVER";
 gameOver.style.display="block";
@@ -342,8 +360,19 @@ gameActive=false;
 }
 }
 
-camera.position.set(player.position.x,25,player.position.z+40);
-camera.lookAt(player.position);
+// camera
+let radius=40;
+camera.position.set(
+player.position.x + Math.sin(yaw)*radius,
+player.position.y+20 + pitch*50,
+player.position.z + Math.cos(yaw)*radius
+);
+
+camera.lookAt(
+player.position.x + Math.sin(yaw)*100,
+player.position.y + pitch*50,
+player.position.z + Math.cos(yaw)*100
+);
 
 renderer.render(scene,camera);
 }
