@@ -71,7 +71,7 @@ onclick="closeShop()">✖</div>
 
 <script>
 
-// --- STATS ---
+// ---------------- STATS ----------------
 let gamesPlayed = parseInt(localStorage.getItem("played"))||0;
 let gamesWon = parseInt(localStorage.getItem("won"))||0;
 let totalCoins = parseInt(localStorage.getItem("coins"))||0;
@@ -79,17 +79,17 @@ played.innerText=gamesPlayed;
 won.innerText=gamesWon;
 coinsTotal.innerText=totalCoins;
 
-// --- SKINS ---
+// ---------------- SKINS ----------------
 let skins=[
-{name:"blue",price:5,color:0x0066ff,type:"cube"},
-{name:"red",price:5,color:0xff0000,type:"cube"},
-{name:"gold",price:10,color:0xffcc00,type:"cube"}
+{name:"blue",price:5,color:0x0066ff},
+{name:"red",price:5,color:0xff0000},
+{name:"gold",price:10,color:0xffcc00}
 ];
 
 let ownedSkins=JSON.parse(localStorage.getItem("ownedSkins"))||["blue"];
 let currentSkin=localStorage.getItem("currentSkin")||"blue";
 
-// --- SHOP ---
+// ---------------- SHOP ----------------
 shopButton.onclick=()=>{shopMenu.style.display="block";renderShop();}
 function closeShop(){shopMenu.style.display="none";}
 
@@ -131,33 +131,33 @@ c.appendChild(div);
 });
 }
 
-// --- GAME ---
-let difficulty="easy";
+// ---------------- GAME ----------------
 let scene,camera,renderer,player;
 let enemies=[],bullets=[],enemyBullets=[],coinsArr=[];
 let keys={},hits=0,kills=0,coins=0,gameActive=false;
-let islandRadius=1200;
 
-// camera
 let yaw=0,pitch=0,mouseDown=false;
+let islandRadius=1500;
 
-// --- PLAYER ---
+// PLAYER
 function createPlayer(){
 let skin=skins.find(s=>s.name===currentSkin);
-return new THREE.Mesh(
+let mesh=new THREE.Mesh(
 new THREE.BoxGeometry(8,12,8),
 new THREE.MeshBasicMaterial({color:skin.color})
 );
+mesh.position.y=6;
+return mesh;
 }
 
 // START
 function chooseDifficulty(mode){
-difficulty=mode;
 difficultyMenu.style.display="none";
 startGame();
 }
 
 function startGame(){
+
 gamesPlayed++;
 localStorage.setItem("played",gamesPlayed);
 played.innerText=gamesPlayed;
@@ -166,67 +166,64 @@ hud.style.display="block";
 gameActive=true;
 
 scene=new THREE.Scene();
-camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,3000);
+camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,4000);
 renderer=new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// eiland
+// MAP
 let island=new THREE.Mesh(
-new THREE.CircleGeometry(1200,64),
+new THREE.CircleGeometry(1500,64),
 new THREE.MeshBasicMaterial({color:0x228B22})
 );
 island.rotation.x=-Math.PI/2;
 scene.add(island);
 
-// bomen
-for(let i=0;i<40;i++){
+// BOMEN
+for(let i=0;i<60;i++){
 let t=new THREE.Mesh(new THREE.CylinderGeometry(3,3,25),
 new THREE.MeshBasicMaterial({color:0x8b4513}));
 let l=new THREE.Mesh(new THREE.ConeGeometry(15,35,10),
 new THREE.MeshBasicMaterial({color:0x228B22}));
-let x=(Math.random()-0.5)*2000;
-let z=(Math.random()-0.5)*2000;
+let x=(Math.random()-0.5)*2500;
+let z=(Math.random()-0.5)*2500;
 t.position.set(x,12,z);
 l.position.set(x,40,z);
 scene.add(t,l);
 }
 
-// gebouwen
-for(let i=0;i<20;i++){
+// GEBOUWEN
+for(let i=0;i<30;i++){
 let b=new THREE.Mesh(
-new THREE.BoxGeometry(60,120,60),
+new THREE.BoxGeometry(80,150,80),
 new THREE.MeshBasicMaterial({color:0x555555})
 );
-b.position.set((Math.random()-0.5)*1800,60,(Math.random()-0.5)*1800);
+b.position.set((Math.random()-0.5)*2000,75,(Math.random()-0.5)*2000);
 scene.add(b);
 }
 
-// coins
-for(let i=0;i<15;i++){
+// COINS
+for(let i=0;i<20;i++){
 let c=new THREE.Mesh(
 new THREE.CylinderGeometry(4,4,2,16),
 new THREE.MeshBasicMaterial({color:0xffff00})
 );
 c.rotation.x=Math.PI/2;
-c.position.set((Math.random()-0.5)*1000,6,(Math.random()-0.5)*1000);
+c.position.set((Math.random()-0.5)*1200,6,(Math.random()-0.5)*1200);
 scene.add(c);
 coinsArr.push(c);
 }
 
-// speler
+// PLAYER
 player=createPlayer();
-player.position.y=6;
 scene.add(player);
 
-// bots
-let botCount=9;
-if(difficulty==="hard") botCount=15;
-if(difficulty==="impossible") botCount=22;
-
-for(let i=0;i<botCount;i++){
-let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0xffffff}));
+// ENEMIES
+for(let i=0;i<15;i++){
+let bot=new THREE.Mesh(
+new THREE.BoxGeometry(8,12,8),
+new THREE.MeshBasicMaterial({color:0xffffff})
+);
 bot.position.set((Math.random()-0.5)*1000,6,(Math.random()-0.5)*1000);
 bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
 scene.add(bot);
@@ -243,21 +240,20 @@ if(e.code==="Space") shoot();
 document.addEventListener("keyup",e=>keys[e.key]=false);
 document.addEventListener("click",shoot);
 
-// mouse look
+// MOUSE LOOK
 document.addEventListener("mousedown",()=>mouseDown=true);
 document.addEventListener("mouseup",()=>mouseDown=false);
-
 document.addEventListener("mousemove",(e)=>{
 if(!mouseDown) return;
-yaw -= e.movementX * 0.002;
-pitch -= e.movementY * 0.002;
-pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));
+yaw -= e.movementX * 0.003;
+pitch -= e.movementY * 0.003;
+pitch=Math.max(-1.2,Math.min(1.2,pitch));
 });
 
 animate();
 }
 
-// shoot
+// SHOOT
 function shoot(){
 let b=new THREE.Mesh(
 new THREE.SphereGeometry(2),
@@ -269,37 +265,21 @@ scene.add(b);
 bullets.push(b);
 }
 
-// bot shoot
-function shootBot(bot){
-let dir=player.position.clone().sub(bot.position).normalize();
-let b=new THREE.Mesh(new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000}));
-b.position.copy(bot.position);
-b.userData.dir=dir;
-scene.add(b);
-enemyBullets.push(b);
-}
-
 // LOOP
 function animate(){
 requestAnimationFrame(animate);
 if(!gameActive) return;
 
-// movement
-if(keys["ArrowUp"]) player.position.z-=4;
-if(keys["ArrowDown"]) player.position.z+=4;
-if(keys["ArrowLeft"]) player.position.x-=4;
-if(keys["ArrowRight"]) player.position.x+=4;
+// MOVEMENT (FIXED)
+let forward = new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));
+let right = new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
 
-// rand
-let dist=Math.sqrt(player.position.x**2+player.position.z**2);
-if(dist>islandRadius){
-endText.innerText="VERDRONKEN";
-gameOver.style.display="block";
-gameActive=false;
-}
+if(keys["ArrowUp"]) player.position.add(forward.clone().multiplyScalar(5));
+if(keys["ArrowDown"]) player.position.add(forward.clone().multiplyScalar(-5));
+if(keys["ArrowLeft"]) player.position.add(right.clone().multiplyScalar(-5));
+if(keys["ArrowRight"]) player.position.add(right.clone().multiplyScalar(5));
 
-// coins
+// COINS
 for(let i=coinsArr.length-1;i>=0;i--){
 if(player.position.distanceTo(coinsArr[i].position)<10){
 scene.remove(coinsArr[i]);
@@ -309,7 +289,7 @@ document.getElementById("coins").innerText=coins;
 }
 }
 
-// bots
+// ENEMIES
 for(let bot of enemies){
 bot.position.add(bot.userData.dir.clone().multiplyScalar(0.5));
 if(Math.random()<0.02){
@@ -317,7 +297,7 @@ bot.userData.dir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5);
 }
 }
 
-// bullets
+// BULLETS
 for(let i=bullets.length-1;i>=0;i--){
 bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
 
@@ -335,44 +315,18 @@ break;
 }
 }
 
-// bots schieten
-if(Math.random()<0.02){
-let bot=enemies[Math.floor(Math.random()*enemies.length)];
-if(bot) shootBot(bot);
-}
-
-// enemy bullets
-for(let i=enemyBullets.length-1;i>=0;i--){
-enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
-
-if(enemyBullets[i].position.distanceTo(player.position)<8){
-hits++;
-document.getElementById("hp").innerText=hits;
-
-scene.remove(enemyBullets[i]);
-enemyBullets.splice(i,1);
-
-if(hits>=3){
-endText.innerText="GAME OVER";
-gameOver.style.display="block";
-gameActive=false;
-}
-}
-}
-
-// camera
-let radius=40;
+// CAMERA (FIXED)
+let camDist=60;
 camera.position.set(
-player.position.x + Math.sin(yaw)*radius,
-player.position.y+20 + pitch*50,
-player.position.z + Math.cos(yaw)*radius
+player.position.x - Math.sin(yaw)*camDist,
+player.position.y + 30 + pitch*40,
+player.position.z - Math.cos(yaw)*camDist
 );
 
-camera.lookAt(
-player.position.x + Math.sin(yaw)*100,
-player.position.y + pitch*50,
-player.position.z + Math.cos(yaw)*100
-);
+camera.lookAt(player.position);
+
+// PLAYER ROTATE
+player.rotation.y = yaw;
 
 renderer.render(scene,camera);
 }
