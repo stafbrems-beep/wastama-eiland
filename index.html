@@ -1,19 +1,15 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class TygoGame : MonoBehaviour
+public class TygoSimpleGame : MonoBehaviour
 {
-    // ===== PLAYER =====
     public float speed = 6f;
-    public float jumpForce = 10f;
+    public float jumpForce = 8f;
+
     public int lives = 3;
 
     private Rigidbody2D rb;
     private bool grounded;
-
-    // ===== GAME =====
-    public int crystals = 0;
-    public Transform respawnPoint;
 
     void Start()
     {
@@ -22,48 +18,31 @@ public class TygoGame : MonoBehaviour
 
     void Update()
     {
-        PlayerMovement();
-        PlayerJump();
-    }
+        // LINKS / RECHTS
+        float x = Input.GetAxisRaw("Horizontal");
+        rb.linearVelocity = new Vector2(x * speed, rb.linearVelocity.y);
 
-    // ===== MOVEMENT =====
-    void PlayerMovement()
-    {
-        float move = Input.GetAxisRaw("Horizontal");
-        rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
-    }
-
-    void PlayerJump()
-    {
+        // SPRINGEN
         if (Input.GetKeyDown(KeyCode.Space) && grounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
     }
 
-    // ===== DAMAGE SYSTEM =====
     void TakeDamage()
     {
         lives--;
 
         if (lives <= 0)
         {
-            RespawnFull();
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
         else
         {
-            transform.position = respawnPoint.position;
+            transform.position = new Vector3(0, 2, 0);
         }
     }
 
-    void RespawnFull()
-    {
-        lives = 3;
-        crystals = 0;
-        transform.position = respawnPoint.position;
-    }
-
-    // ===== COLLISIONS =====
     void OnCollisionEnter2D(Collision2D col)
     {
         if (col.gameObject.CompareTag("Ground"))
@@ -72,6 +51,11 @@ public class TygoGame : MonoBehaviour
         }
 
         if (col.gameObject.CompareTag("Enemy"))
+        {
+            TakeDamage();
+        }
+
+        if (col.gameObject.CompareTag("Death"))
         {
             TakeDamage();
         }
@@ -85,59 +69,16 @@ public class TygoGame : MonoBehaviour
         }
     }
 
-    // ===== TRIGGERS (CRYSTALS + LEVEL END) =====
     void OnTriggerEnter2D(Collider2D col)
     {
-        if (col.gameObject.CompareTag("Crystal"))
-        {
-            crystals++;
-            Destroy(col.gameObject);
-        }
-
         if (col.gameObject.CompareTag("Finish"))
         {
-            NextLevel();
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
         }
-    }
 
-    void NextLevel()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
-    }
-
-    // ===== SIMPLE ENEMY AI (OPTIONAL) =====
-    public Transform enemyA;
-    public Transform enemyB;
-    public float enemySpeed = 2f;
-    private Transform enemyTarget;
-
-    void FixedUpdate()
-    {
-        if (enemyA != null && enemyB != null)
+        if (col.gameObject.CompareTag("Crystal"))
         {
-            MoveEnemy();
-        }
-    }
-
-    void MoveEnemy()
-    {
-        if (enemyTarget == null)
-            enemyTarget = enemyA;
-
-        GameObject enemy = GameObject.FindGameObjectWithTag("Enemy");
-
-        if (enemy != null)
-        {
-            enemy.transform.position = Vector2.MoveTowards(
-                enemy.transform.position,
-                enemyTarget.position,
-                enemySpeed * Time.deltaTime
-            );
-
-            if (Vector2.Distance(enemy.transform.position, enemyTarget.position) < 0.2f)
-            {
-                enemyTarget = enemyTarget == enemyA ? enemyB : enemyA;
-            }
+            Destroy(col.gameObject);
         }
     }
 }
