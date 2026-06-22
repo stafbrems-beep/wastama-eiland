@@ -1,189 +1,143 @@
-// ===== PLAYER =====
-let playerSpeed = 3;
-let playerHP = 3;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
-// ===== MOVEMENT =====
-function updatePlayer(){
+public class TygoGame : MonoBehaviour
+{
+    // ===== PLAYER =====
+    public float speed = 6f;
+    public float jumpForce = 10f;
+    public int lives = 3;
 
-    if(keys["w"]){
-        player.position.x += Math.sin(yaw) * playerSpeed;
-        player.position.z -= Math.cos(yaw) * playerSpeed;
+    private Rigidbody2D rb;
+    private bool grounded;
+
+    // ===== GAME =====
+    public int crystals = 0;
+    public Transform respawnPoint;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    if(keys["s"]){
-        player.position.x -= Math.sin(yaw) * playerSpeed;
-        player.position.z += Math.cos(yaw) * playerSpeed;
+    void Update()
+    {
+        PlayerMovement();
+        PlayerJump();
     }
 
-    if(keys["a"]){
-        player.position.x -= Math.cos(yaw) * playerSpeed;
-        player.position.z -= Math.sin(yaw) * playerSpeed;
+    // ===== MOVEMENT =====
+    void PlayerMovement()
+    {
+        float move = Input.GetAxisRaw("Horizontal");
+        rb.linearVelocity = new Vector2(move * speed, rb.linearVelocity.y);
     }
 
-    if(keys["d"]){
-        player.position.x += Math.cos(yaw) * playerSpeed;
-        player.position.z += Math.sin(yaw) * playerSpeed;
-    }
-}
-
-// ===== CAMERA =====
-function updateCamera(){
-
-    camera.position.x =
-        player.position.x - Math.sin(yaw) * 40;
-
-    camera.position.y =
-        player.position.y + 25;
-
-    camera.position.z =
-        player.position.z + Math.cos(yaw) * 40;
-
-    camera.lookAt(player.position);
-}
-
-// ===== BULLETS =====
-function updateBullets(){
-
-    for(let i = bullets.length - 1; i >= 0; i--){
-
-        let bullet = bullets[i];
-
-        bullet.position.add(
-            bullet.userData.dir.clone().multiplyScalar(8)
-        );
-
-        if(bullet.position.length() > 2000){
-            scene.remove(bullet);
-            bullets.splice(i,1);
+    void PlayerJump()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) && grounded)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
     }
-}
 
-// ===== ENEMY AI =====
-function updateEnemies(){
+    // ===== DAMAGE SYSTEM =====
+    void TakeDamage()
+    {
+        lives--;
 
-    for(let enemy of enemies){
-
-        let dir =
-            player.position.clone()
-            .sub(enemy.position)
-            .normalize();
-
-        enemy.position.add(
-            dir.multiplyScalar(0.4)
-        );
-
-        if(Math.random() < 0.005){
-            shootBot(enemy);
+        if (lives <= 0)
+        {
+            RespawnFull();
+        }
+        else
+        {
+            transform.position = respawnPoint.position;
         }
     }
-}
 
-// ===== COLLISIONS =====
-function checkHits(){
+    void RespawnFull()
+    {
+        lives = 3;
+        crystals = 0;
+        transform.position = respawnPoint.position;
+    }
 
-    for(let b = bullets.length-1; b >= 0; b--){
+    // ===== COLLISIONS =====
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if (col.gameObject.CompareTag("Ground"))
+        {
+            grounded = true;
+        }
 
-        for(let e = enemies.length-1; e >= 0; e--){
+        if (col.gameObject.CompareTag("Enemy"))
+        {
+            TakeDamage();
+        }
+    }
 
-            let bullet = bullets[b];
-            let enemy = enemies[e];
+    void OnCollisionExit2D(Collision2D col)
+    {
+        if (col.gameObject.CompareTag("Ground"))
+        {
+            grounded = false;
+        }
+    }
 
-            if(
-                bullet.position.distanceTo(
-                    enemy.position
-                ) < 8
-            ){
+    // ===== TRIGGERS (CRYSTALS + LEVEL END) =====
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        if (col.gameObject.CompareTag("Crystal"))
+        {
+            crystals++;
+            Destroy(col.gameObject);
+        }
 
-                scene.remove(enemy);
-                scene.remove(bullet);
+        if (col.gameObject.CompareTag("Finish"))
+        {
+            NextLevel();
+        }
+    }
 
-                enemies.splice(e,1);
-                bullets.splice(b,1);
+    void NextLevel()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+    }
 
-                kills++;
+    // ===== SIMPLE ENEMY AI (OPTIONAL) =====
+    public Transform enemyA;
+    public Transform enemyB;
+    public float enemySpeed = 2f;
+    private Transform enemyTarget;
 
-                document.getElementById("kills").innerText =
-                    kills;
+    void FixedUpdate()
+    {
+        if (enemyA != null && enemyB != null)
+        {
+            MoveEnemy();
+        }
+    }
 
-                // coin drop
-                let coin = new THREE.Mesh(
-                    new THREE.CylinderGeometry(2,2,1),
-                    new THREE.MeshBasicMaterial({
-                        color:0xffff00
-                    })
-                );
+    void MoveEnemy()
+    {
+        if (enemyTarget == null)
+            enemyTarget = enemyA;
 
-                coin.rotation.x = Math.PI/2;
-                coin.position.copy(enemy.position);
+        GameObject enemy = GameObject.FindGameObjectWithTag("Enemy");
 
-                scene.add(coin);
+        if (enemy != null)
+        {
+            enemy.transform.position = Vector2.MoveTowards(
+                enemy.transform.position,
+                enemyTarget.position,
+                enemySpeed * Time.deltaTime
+            );
 
-                coinObjects.push(coin);
-
-                break;
+            if (Vector2.Distance(enemy.transform.position, enemyTarget.position) < 0.2f)
+            {
+                enemyTarget = enemyTarget == enemyA ? enemyB : enemyA;
             }
         }
     }
-}
-
-// ===== COINS =====
-function updateCoins(){
-
-    for(let i = coinObjects.length-1; i >= 0; i--){
-
-        if(
-            player.position.distanceTo(
-                coinObjects[i].position
-            ) < 10
-        ){
-
-            coins++;
-
-            document.getElementById("coins").innerText =
-                coins;
-
-            scene.remove(coinObjects[i]);
-
-            coinObjects.splice(i,1);
-        }
-    }
-}
-
-// ===== HEALTH =====
-function spawnHealthPack(){
-
-    let med = new THREE.Mesh(
-        new THREE.BoxGeometry(5,5,5),
-        new THREE.MeshBasicMaterial({
-            color:0xff00ff
-        })
-    );
-
-    med.position.set(
-        (Math.random()-0.5)*500,
-        3,
-        (Math.random()-0.5)*500
-    );
-
-    scene.add(med);
-
-    healthPacks.push(med);
-}
-
-setInterval(()=>{
-    if(gameActive){
-        spawnHealthPack();
-    }
-},30000);
-
-// ===== GAME LOOP =====
-function updateGame(){
-
-    updatePlayer();
-    updateCamera();
-    updateBullets();
-    updateEnemies();
-    checkHits();
-    updateCoins();
 }
