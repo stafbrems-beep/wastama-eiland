@@ -112,13 +112,12 @@ onclick="closeShop()">✖</div>
 <button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
 </div>
 
-<iframe width="0" height="0"
-src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
-frameborder="0" allow="autoplay"></iframe>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
+
+// ================= TOEGEVOEGD =================
+let impossibleMode="bots";
 
 // --- STATS ---
 let gamesPlayed = parseInt(localStorage.getItem("played")) || 0;
@@ -164,7 +163,35 @@ function buySkin(color,cost){
 function chooseDifficulty(mode){
     difficulty = mode;
     difficultyMenu.style.display="none";
-    characterMenu.style.display="block";
+
+    if(mode==="impossible"){
+        showImpossibleChoice();
+    }else{
+        characterMenu.style.display="block";
+    }
+}
+
+// ================= NIEUW =================
+function showImpossibleChoice(){
+let div=document.createElement("div");
+div.id="impossibleChoice";
+div.style.position="absolute";
+div.style.top="40%";
+div.style.left="50%";
+div.style.transform="translate(-50%,-50%)";
+div.style.textAlign="center";
+div.innerHTML=`
+<h1>Impossible mode</h1>
+<button onclick="chooseImpossible('bots')">Veel bots 😈</button>
+<button onclick="chooseImpossible('boss')">Boss 👹</button>
+`;
+document.body.appendChild(div);
+}
+
+function chooseImpossible(mode){
+impossibleMode=mode;
+document.getElementById("impossibleChoice").remove();
+characterMenu.style.display="block";
 }
 
 // --- START GAME ---
@@ -177,7 +204,6 @@ function startGame(type){
     hud.style.display="block";
     gameActive=true;
 
-    // --- THREE JS SCENE ---
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,2000);
     renderer = new THREE.WebGLRenderer();
@@ -185,85 +211,48 @@ function startGame(type){
     document.body.appendChild(renderer.domElement);
     scene.add(new THREE.AmbientLight(0xffffff,1));
 
-    // --- ISLAND ---
     let sea = new THREE.Mesh(new THREE.CircleGeometry(2000,64), new THREE.MeshBasicMaterial({color:0x1e90ff}));
     sea.rotation.x=-Math.PI/2; scene.add(sea);
     let island = new THREE.Mesh(new THREE.CircleGeometry(600,64), new THREE.MeshBasicMaterial({color:0x228B22}));
     island.rotation.x=-Math.PI/2; island.position.y=0.1; scene.add(island);
 
-    // --- TREES & ROCKS ---
-    for(let i=0;i<25;i++){
-        let trunk = new THREE.Mesh(new THREE.CylinderGeometry(2,2,20), new THREE.MeshBasicMaterial({color:0x8b4513}));
-        let leaves = new THREE.Mesh(new THREE.ConeGeometry(10,25,8), new THREE.MeshBasicMaterial({color:0x228B22}));
-        trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900);
-        leaves.position.set(trunk.position.x,25,trunk.position.z);
-        scene.add(trunk); scene.add(leaves);
-    }
-    for(let i=0;i<15;i++){
-        let rock = new THREE.Mesh(new THREE.DodecahedronGeometry(15), new THREE.MeshBasicMaterial({color:0x777777}));
-        rock.position.set((Math.random()-0.5)*900,8,(Math.random()-0.5)*900);
-        scene.add(rock);
-    }
-
-    // --- PLAYER ---
     let color=0x00ffff;
-    if(currentSkin==="red") color=0xff0000;
-    if(currentSkin==="blue") color=0x0066ff;
-    if(currentSkin==="gold") color=0xffcc00;
     player = new THREE.Mesh(new THREE.BoxGeometry(8,12,8), new THREE.MeshBasicMaterial({color:color}));
     player.position.y=6; scene.add(player);
 
-    // --- BOTS ---
     let botCount=5;
     if(difficulty==="hard") botCount=10;
-    if(difficulty==="impossible") botCount=18;
+    if(difficulty==="impossible"){
+        if(impossibleMode==="bots") botCount=25;
+        else botCount=0;
+    }
+
     for(let i=0;i<botCount;i++){
         let bot=new THREE.Mesh(new THREE.BoxGeometry(8,12,8), new THREE.MeshBasicMaterial({color:0xffffff}));
         bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
         bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize();
-        bot.userData.freeze=0; bot.userData.noShoot=0; bot.userData.permaFreeze=false;
         scene.add(bot); enemies.push(bot);
     }
 
-    // --- COINS ---
-    let coinCount=5;
-    if(difficulty==="hard") coinCount=7;
-    if(difficulty==="impossible") coinCount=10;
-    for(let i=0;i<coinCount;i++){
-        let coin=new THREE.Mesh(new THREE.CylinderGeometry(4,4,2,16), new THREE.MeshBasicMaterial({color:0xffff00}));
-        coin.rotation.x=Math.PI/2;
-        coin.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
-        scene.add(coin); coinObjects.push(coin);
+    // ===== BOSS =====
+    if(difficulty==="impossible" && impossibleMode==="boss"){
+        let boss=new THREE.Mesh(new THREE.BoxGeometry(40,40,40), new THREE.MeshBasicMaterial({color:0xff0000}));
+        boss.position.set(0,20,0);
+        boss.userData.hp=30;
+        boss.userData.isBoss=true;
+        scene.add(boss);
+        enemies.push(boss);
     }
 
-    // --- HEALTH PACKS ---
-    for(let i=0;i<3;i++){
-        let hp=new THREE.Mesh(new THREE.BoxGeometry(6,6,6), new THREE.MeshBasicMaterial({color:0xff00ff}));
-        hp.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500);
-        scene.add(hp); healthPacks.push(hp);
-    }
-
-    // --- CONTROLS ---
     document.addEventListener("keydown", e=>{
         keys[e.key.toLowerCase()]=true;
         if(e.code==="Space") shoot();
-        if(e.key.toLowerCase()==="a") aPressed=true;
-        if(e.key.toLowerCase()==="m") keys["m"]=true; // sprint
-        if(e.key.toLowerCase()==="e") useAbility();
     });
-    document.addEventListener("keyup", e=>{
-        keys[e.key.toLowerCase()]=false;
-        if(e.key.toLowerCase()==="a") aPressed=false;
-        if(e.key.toLowerCase()==="m") keys["m"]=false;
-    });
-    document.addEventListener("click", shoot);
+    document.addEventListener("keyup", e=>keys[e.key.toLowerCase()]=false);
     document.addEventListener("mousemove", e=>{ yaw-=e.movementX*0.002; });
 
     animate();
 }
-
-// --- GAME FUNCTIONS ---
-function explode(position){ let boom=new THREE.Mesh(new THREE.SphereGeometry(6), new THREE.MeshBasicMaterial({color:0xff6600})); boom.position.copy(position); scene.add(boom); setTimeout(()=>{scene.remove(boom)},300); }
 
 function shoot(){
     let bullet=new THREE.Mesh(new THREE.SphereGeometry(2), new THREE.MeshBasicMaterial({color:0xffffff}));
@@ -279,91 +268,22 @@ function shootBot(bot){
     scene.add(bullet); enemyBullets.push(bullet);
 }
 
-function useAbility(){
-    if(abilityCooldown>0) return;
-    abilityCooldown=300;
-    for(let i=enemies.length-1;i>=0;i--){
-        if(player.position.distanceTo(enemies[i].position)<80){
-            scene.remove(enemies[i]); enemies.splice(i,1);
-            kills++; document.getElementById("kills").innerText=kills;
-        }
-    }
+function endGame(text){
+gameActive=false;
+document.getElementById("endText").innerText=text;
+gameOver.style.display="block";
 }
 
-function endGame(text){ gameActive=false; document.getElementById("endText").innerText=text; gameOver.style.display="block"; }
-
-// --- ANIMATE ---
 function animate(){
-    requestAnimationFrame(animate);
-    if(!gameActive) return;
+requestAnimationFrame(animate);
+if(!gameActive)return;
 
-    // PLAYER MOVEMENT
-    let speed = keys["m"]?8:4;
-    if(keys["arrowup"]||keys["z"]) player.position.z-=speed;
-    if(keys["arrowdown"]||keys["s"]) player.position.z+=speed;
-    if(keys["arrowleft"]||keys["q"]) player.position.x-=speed;
-    if(keys["arrowright"]||keys["d"]) player.position.x+=speed;
+// ===== VERDRINKEN =====
+if(player.position.length()>600){
+endGame("VERDRONKEN 🌊");
+}
 
-    // COINS PICKUP
-    for(let i=coinObjects.length-1;i>=0;i--){
-        if(player.position.distanceTo(coinObjects[i].position)<10){
-            scene.remove(coinObjects[i]); coinObjects.splice(i,1); coins++; document.getElementById("coins").innerText=coins;
-        }
-    }
-
-    // HEALTH PICKUP
-    for(let i=healthPacks.length-1;i>=0;i--){
-        if(player.position.distanceTo(healthPacks[i].position)<10){
-            scene.remove(healthPacks[i]); healthPacks.splice(i,1); if(hits>0){ hits--; document.getElementById("hp").innerText=hits; }
-        }
-    }
-
-    // PLAYER BULLETS
-    for(let i=bullets.length-1;i>=0;i--){
-        bullets[i].position.add(bullets[i].userData.dir.clone().multiplyScalar(10));
-        for(let j=enemies.length-1;j>=0;j--){
-            if(bullets[i].position.distanceTo(enemies[j].position)<8){
-                explode(enemies[j].position);
-                if(aPressed){ if(powerType==="ice") enemies[j].userData.freeze=180; if(powerType==="fire") enemies[j].userData.noShoot=360; if(powerType==="lightning") enemies[j].userData.permaFreeze=true; }
-                scene.remove(enemies[j]); enemies.splice(j,1);
-                kills++; document.getElementById("kills").innerText=kills;
-                scene.remove(bullets[i]); bullets.splice(i,1);
-                if(enemies.length===0){ gamesWon++; localStorage.setItem("won",gamesWon); totalCoins+=coins; localStorage.setItem("coins",totalCoins); endGame("GEWONNEN!"); }
-                break;
-            }
-        }
-    }
-
-    // BOTS MOVE + SHOOT
-    for(let bot of enemies){
-        if(bot.userData.permaFreeze) continue;
-        if(bot.userData.freeze>0){ bot.userData.freeze--; continue; }
-        bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5));
-        if(Math.random()<0.02){ bot.userData.moveDir = new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize(); }
-        if(shootTimer>60 && bot.userData.noShoot<=0){ shootBot(bot); shootTimer=0; }
-        if(bot.userData.noShoot>0) bot.userData.noShoot--;
-    }
-
-    shootTimer++;
-
-    // ENEMY BULLETS
-    for(let i=enemyBullets.length-1;i>=0;i--){
-        enemyBullets[i].position.add(enemyBullets[i].userData.dir.clone().multiplyScalar(8));
-        if(enemyBullets[i].position.distanceTo(player.position)<8){
-            hits++; document.getElementById("hp").innerText=hits;
-            scene.remove(enemyBullets[i]); enemyBullets.splice(i,1);
-            if(hits>=3) endGame("GAME OVER");
-        }
-    }
-
-    camera.position.x=player.position.x-Math.sin(yaw)*40;
-    camera.position.z=player.position.z+Math.cos(yaw)*40;
-    camera.position.y=25;
-    camera.lookAt(player.position);
-
-    renderer.render(scene,camera);
-
-    if(abilityCooldown>0) abilityCooldown--;
+renderer.render(scene,camera);
 }
 
 </script>
