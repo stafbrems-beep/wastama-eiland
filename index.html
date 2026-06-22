@@ -26,6 +26,7 @@ top:10px;
 left:10px;
 color:white;
 font-size:18px;
+display:none;
 }
 
 #menu{
@@ -47,7 +48,7 @@ font-size:18px;
 <button onclick="startGame()">START</button>
 </div>
 
-<div id="hud" style="display:none">
+<div id="hud">
 <div>Level: <span id="level">1</span></div>
 <div>Coins: <span id="coins">0</span></div>
 <div>Lives: <span id="lives">3</span></div>
@@ -61,13 +62,12 @@ let canvas=document.getElementById("game")
 let ctx=canvas.getContext("2d")
 
 let keys={}
-
 document.addEventListener("keydown",e=>keys[e.key]=true)
 document.addEventListener("keyup",e=>keys[e.key]=false)
 
 let player={
 x:50,y:300,w:30,h:30,
-vx:0,vy:0,
+vy:0,
 grounded:false
 }
 
@@ -79,7 +79,8 @@ let lives=3
 let platforms=[]
 let enemies=[]
 let spikes=[]
-let coinsArr=[]
+let coinList=[]
+let finish={x:0,y:0,w:40,h:80}
 
 function startGame(){
 document.getElementById("menu").style.display="none"
@@ -100,15 +101,16 @@ player.vy=0
 platforms=[]
 enemies=[]
 spikes=[]
-coinsArr=[]
+coinList=[]
 
-let len=2000 + level*1000
+// LEVEL LENGTE (groter per level)
+let len=2000 + level*1200
 
-// GROUND
+// GROND
 platforms.push({x:0,y:420,w:len,h:50})
 
-// platforms
-for(let i=0;i<level*10;i++){
+// PLATFORMEN
+for(let i=0;i<level*12;i++){
 platforms.push({
 x:Math.random()*len,
 y:250-Math.random()*150,
@@ -117,18 +119,18 @@ h:15
 })
 }
 
-// enemies (meer + sneller)
-for(let i=0;i<level*5;i++){
+// ENEMIES (moeilijker per level)
+for(let i=0;i<level*6;i++){
 enemies.push({
-x:200+Math.random()*(len-400),
+x:300+Math.random()*(len-600),
 y:390,
 w:30,h:30,
 vx:(Math.random()<0.5?-2:2)*level
 })
 }
 
-// spikes (gevaar)
-for(let i=0;i<level*6;i++){
+// SPIKES
+for(let i=0;i<level*8;i++){
 spikes.push({
 x:Math.random()*len,
 y:400,
@@ -136,14 +138,22 @@ w:30,h:20
 })
 }
 
-// coins
-for(let i=0;i<level*8;i++){
-coinsArr.push({
+// COINS
+for(let i=0;i<level*10;i++){
+coinList.push({
 x:Math.random()*len,
 y:200-Math.random()*150,
 w:15,h:15,
-collected:false
+taken:false
 })
+}
+
+// FINISH POORT (BELANGRIJK)
+finish={
+x:len-120,
+y:340,
+w:40,
+h:80
 }
 }
 
@@ -182,7 +192,7 @@ player.grounded=true
 // enemies
 for(let e of enemies){
 e.x+=e.vx
-if(e.x<0||e.x>3000)e.vx*=-1
+if(e.x<0||e.x>4000)e.vx*=-1
 
 if(collide(player,e))damage()
 }
@@ -193,21 +203,21 @@ if(collide(player,s))damage()
 }
 
 // coins
-for(let c of coinsArr){
-if(!c.collected && collide(player,c)){
-c.collected=true
+for(let c of coinList){
+if(!c.taken && collide(player,c)){
+c.taken=true
 coins++
 document.getElementById("coins").innerText=coins
 }
 }
 
-// camera
-cameraX=player.x-200
-
-// level finish
-if(player.x>3000){
+// FINISH CHECK (REALISTISCH)
+if(collide(player,finish)){
 nextLevel()
 }
+
+// camera
+cameraX=player.x-200
 }
 
 function draw(){
@@ -228,8 +238,8 @@ ctx.fillRect(s.x-cameraX,s.y,s.w,s.h)
 
 // coins
 ctx.fillStyle="yellow"
-for(let c of coinsArr){
-if(!c.collected){
+for(let c of coinList){
+if(!c.taken){
 ctx.fillRect(c.x-cameraX,c.y,c.w,c.h)
 }
 }
@@ -239,6 +249,10 @@ ctx.fillStyle="purple"
 for(let e of enemies){
 ctx.fillRect(e.x-cameraX,e.y,e.w,e.h)
 }
+
+// finish POORT
+ctx.fillStyle="gold"
+ctx.fillRect(finish.x-cameraX,finish.y,finish.w,finish.h)
 
 // player
 ctx.fillStyle="cyan"
@@ -271,7 +285,7 @@ loadLevel(level+1)
 player.x=50
 }
 else{
-alert("TYGO IS GERED!")
+alert("🎉 TYGO HEEFT ALLE LEVELS GEHAALD!")
 location.reload()
 }
 }
