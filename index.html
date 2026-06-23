@@ -1,295 +1,275 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Tygo Jungle Escape</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mijn 2D Platform Game</title>
 <style>
 body{
-margin:0;
-background:black;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-font-family:Arial;
+    margin:0;
+    overflow:hidden;
+    background:#87ceeb;
+    font-family:Arial,sans-serif;
 }
-
 canvas{
-background:#2e7d32;
-border:3px solid white;
+    display:block;
+    margin:auto;
+    background:#87ceeb;
 }
-
-#hud{
-position:absolute;
-top:10px;
-left:10px;
-color:white;
-font-size:18px;
-display:none;
-}
-
-#menu{
-position:absolute;
-color:white;
-text-align:center;
-}
-button{
-padding:10px;
-font-size:18px;
+#ui{
+    position:absolute;
+    top:10px;
+    left:10px;
+    color:white;
+    font-size:24px;
+    font-weight:bold;
 }
 </style>
 </head>
-
 <body>
 
-<div id="menu">
-<h1>TYGO JUNGLE ESCAPE</h1>
-<button onclick="startGame()">START</button>
-</div>
-
-<div id="hud">
-<div>Level: <span id="level">1</span></div>
-<div>Coins: <span id="coins">0</span></div>
-<div>Lives: <span id="lives">3</span></div>
-</div>
-
-<canvas id="game" width="800" height="450"></canvas>
+<div id="ui">Level: 1 | Coins: 0</div>
+<canvas id="game" width="1000" height="500"></canvas>
 
 <script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const ui = document.getElementById("ui");
 
-let canvas=document.getElementById("game")
-let ctx=canvas.getContext("2d")
+const gravity = 0.7;
 
-let keys={}
-document.addEventListener("keydown",e=>keys[e.key]=true)
-document.addEventListener("keyup",e=>keys[e.key]=false)
+const player = {
+    x:50,
+    y:100,
+    w:40,
+    h:50,
+    dx:0,
+    dy:0,
+    speed:5,
+    jump:-14,
+    grounded:false
+};
 
-let player={
-x:50,y:300,w:30,h:30,
-vy:0,
-grounded:false
+const keys = {};
+
+document.addEventListener("keydown",e=>{
+    keys[e.key]=true;
+});
+
+document.addEventListener("keyup",e=>{
+    keys[e.key]=false;
+});
+
+let levelIndex = 0;
+let score = 0;
+
+const levels = [
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:200,y:350,w:200,h:20},
+{x:500,y:300,w:200,h:20}
+],
+coins:[
+{x:250,y:300},
+{x:550,y:250},
+{x:650,y:250}
+]
+},
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:150,y:380,w:120,h:20},
+{x:350,y:320,w:120,h:20},
+{x:550,y:260,w:120,h:20}
+],
+coins:[
+{x:180,y:330},
+{x:380,y:270},
+{x:580,y:210}
+]
+},
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:250,y:380,w:150,h:20},
+{x:500,y:310,w:150,h:20},
+{x:750,y:240,w:150,h:20}
+],
+coins:[
+{x:280,y:330},
+{x:530,y:260},
+{x:780,y:190}
+]
+},
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:100,y:300,w:150,h:20},
+{x:350,y:250,w:150,h:20},
+{x:600,y:200,w:150,h:20}
+],
+coins:[
+{x:150,y:250},
+{x:400,y:200},
+{x:650,y:150}
+]
+},
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:180,y:350,w:180,h:20},
+{x:450,y:280,w:180,h:20},
+{x:720,y:210,w:180,h:20}
+],
+coins:[
+{x:230,y:300},
+{x:500,y:230},
+{x:770,y:160}
+]
+},
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:120,y:340,w:120,h:20},
+{x:320,y:290,w:120,h:20},
+{x:520,y:240,w:120,h:20},
+{x:720,y:190,w:120,h:20}
+],
+coins:[
+{x:150,y:290},
+{x:350,y:240},
+{x:550,y:190},
+{x:750,y:140}
+]
+},
+{
+platforms:[
+{x:0,y:450,w:1000,h:50},
+{x:250,y:350,w:150,h:20},
+{x:500,y:250,w:150,h:20},
+{x:750,y:150,w:150,h:20}
+],
+coins:[
+{x:280,y:300},
+{x:530,y:200},
+{x:780,y:100}
+]
 }
+];
 
-let cameraX=0
-let level=1
-let coins=0
-let lives=3
-
-let platforms=[]
-let enemies=[]
-let spikes=[]
-let coinList=[]
-let finish={x:0,y:0,w:40,h:80}
-
-function startGame(){
-document.getElementById("menu").style.display="none"
-document.getElementById("hud").style.display="block"
-loadLevel(1)
-loop()
-}
-
-function loadLevel(l){
-
-level=l
-document.getElementById("level").innerText=level
-
-player.x=50
-player.y=300
-player.vy=0
-
-platforms=[]
-enemies=[]
-spikes=[]
-coinList=[]
-
-// LEVEL LENGTE (groter per level)
-let len=2000 + level*1200
-
-// GROND
-platforms.push({x:0,y:420,w:len,h:50})
-
-// PLATFORMEN
-for(let i=0;i<level*12;i++){
-platforms.push({
-x:Math.random()*len,
-y:250-Math.random()*150,
-w:120,
-h:15
-})
-}
-
-// ENEMIES (moeilijker per level)
-for(let i=0;i<level*6;i++){
-enemies.push({
-x:300+Math.random()*(len-600),
-y:390,
-w:30,h:30,
-vx:(Math.random()<0.5?-2:2)*level
-})
-}
-
-// SPIKES
-for(let i=0;i<level*8;i++){
-spikes.push({
-x:Math.random()*len,
-y:400,
-w:30,h:20
-})
-}
-
-// COINS
-for(let i=0;i<level*10;i++){
-coinList.push({
-x:Math.random()*len,
-y:200-Math.random()*150,
-w:15,h:15,
-taken:false
-})
-}
-
-// FINISH POORT (BELANGRIJK)
-finish={
-x:len-120,
-y:340,
-w:40,
-h:80
-}
-}
-
-function loop(){
-update()
-draw()
-requestAnimationFrame(loop)
+function resetPlayer(){
+    player.x = 50;
+    player.y = 100;
+    player.dx = 0;
+    player.dy = 0;
 }
 
 function update(){
 
-// movement
-if(keys["ArrowLeft"])player.x-=5
-if(keys["ArrowRight"])player.x+=5
+    if(keys["ArrowLeft"] || keys["a"])
+        player.dx = -player.speed;
+    else if(keys["ArrowRight"] || keys["d"])
+        player.dx = player.speed;
+    else
+        player.dx = 0;
 
-// jump
-if(keys[" "] && player.grounded){
-player.vy=-10
-player.grounded=false
-}
+    if((keys["ArrowUp"] || keys["w"] || keys[" "]) && player.grounded){
+        player.dy = player.jump;
+        player.grounded = false;
+    }
 
-player.vy+=0.5
-player.y+=player.vy
+    player.dy += gravity;
+    player.x += player.dx;
+    player.y += player.dy;
 
-player.grounded=false
+    player.grounded = false;
 
-// platforms
-for(let p of platforms){
-if(collide(player,p)){
-player.y=p.y-player.h
-player.vy=0
-player.grounded=true
-}
-}
+    const level = levels[levelIndex];
 
-// enemies
-for(let e of enemies){
-e.x+=e.vx
-if(e.x<0||e.x>4000)e.vx*=-1
+    level.platforms.forEach(p=>{
 
-if(collide(player,e))damage()
-}
+        if(
+            player.x < p.x+p.w &&
+            player.x+player.w > p.x &&
+            player.y < p.y+p.h &&
+            player.y+player.h > p.y
+        ){
 
-// spikes
-for(let s of spikes){
-if(collide(player,s))damage()
-}
+            if(player.dy > 0){
+                player.y = p.y-player.h;
+                player.dy = 0;
+                player.grounded = true;
+            }
+        }
+    });
 
-// coins
-for(let c of coinList){
-if(!c.taken && collide(player,c)){
-c.taken=true
-coins++
-document.getElementById("coins").innerText=coins
-}
-}
+    level.coins = level.coins.filter(c=>{
 
-// FINISH CHECK (REALISTISCH)
-if(collide(player,finish)){
-nextLevel()
-}
+        const hit =
+            player.x < c.x+20 &&
+            player.x+player.w > c.x &&
+            player.y < c.y+20 &&
+            player.y+player.h > c.y;
 
-// camera
-cameraX=player.x-200
+        if(hit){
+            score++;
+            return false;
+        }
+        return true;
+    });
+
+    if(level.coins.length === 0){
+
+        levelIndex++;
+
+        if(levelIndex >= levels.length){
+            alert("Gefeliciteerd! Je hebt alle 7 levels uitgespeeld!");
+            location.reload();
+        }else{
+            alert("Level " + levelIndex + " voltooid!");
+            resetPlayer();
+        }
+    }
+
+    if(player.y > canvas.height){
+        resetPlayer();
+    }
+
+    ui.innerText =
+      "Level: " + (levelIndex+1) +
+      " | Coins: " + score;
 }
 
 function draw(){
 
-ctx.clearRect(0,0,800,450)
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-// platforms
-ctx.fillStyle="green"
-for(let p of platforms){
-ctx.fillRect(p.x-cameraX,p.y,p.w,p.h)
+    const level = levels[levelIndex];
+
+    level.platforms.forEach(p=>{
+        ctx.fillStyle = "#2e8b57";
+        ctx.fillRect(p.x,p.y,p.w,p.h);
+    });
+
+    level.coins.forEach(c=>{
+        ctx.fillStyle = "gold";
+        ctx.beginPath();
+        ctx.arc(c.x+10,c.y+10,10,0,Math.PI*2);
+        ctx.fill();
+    });
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(player.x,player.y,player.w,player.h);
 }
 
-// spikes
-ctx.fillStyle="red"
-for(let s of spikes){
-ctx.fillRect(s.x-cameraX,s.y,s.w,s.h)
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
 }
 
-// coins
-ctx.fillStyle="yellow"
-for(let c of coinList){
-if(!c.taken){
-ctx.fillRect(c.x-cameraX,c.y,c.w,c.h)
-}
-}
-
-// enemies
-ctx.fillStyle="purple"
-for(let e of enemies){
-ctx.fillRect(e.x-cameraX,e.y,e.w,e.h)
-}
-
-// finish POORT
-ctx.fillStyle="gold"
-ctx.fillRect(finish.x-cameraX,finish.y,finish.w,finish.h)
-
-// player
-ctx.fillStyle="cyan"
-ctx.fillRect(player.x-cameraX,player.y,player.w,player.h)
-}
-
-function collide(a,b){
-return a.x<b.x+b.w &&
-a.x+a.w>b.x &&
-a.y<b.y+b.h &&
-a.y+a.h>b.y
-}
-
-function damage(){
-lives--
-document.getElementById("lives").innerText=lives
-
-player.x=50
-player.y=300
-
-if(lives<=0){
-alert("GAME OVER")
-location.reload()
-}
-}
-
-function nextLevel(){
-if(level<5){
-loadLevel(level+1)
-player.x=50
-}
-else{
-alert("🎉 TYGO HEEFT ALLE LEVELS GEHAALD!")
-location.reload()
-}
-}
-
+gameLoop();
 </script>
 
 </body>
