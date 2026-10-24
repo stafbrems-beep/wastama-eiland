@@ -1,567 +1,653 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="nl">
 <head>
-<meta charset="UTF-8">
-<title>WASTAMA EILAND</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>WASTAMA VOETBAL 2026</title>
 <style>
-body{
-margin:0;
-overflow:hidden;
-background:black;
-font-family:Arial;
-color:white;
+:root {
+  color-scheme: dark;
+  --lime: #a6ff00;
+  --glass: rgba(8,13,22,.85);
+  --line: rgba(255,255,255,.2);
 }
-
-#difficultyMenu,#characterMenu,#gameOver{
-position:absolute;
-top:40%;
-left:50%;
-transform:translate(-50%,-50%);
-text-align:center;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-
-#characterMenu{display:none;}
-
-#hud{
-position:absolute;
-top:60px;
-left:20px;
-display:none;
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #050b07;
+  font-family: 'Segoe UI', system-ui, sans-serif;
 }
-
-#stats{
-position:absolute;
-top:10px;
-left:20px;
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
 }
-
-#shopButton{
-position:absolute;
-top:10px;
-right:20px;
-background:#444;
-padding:10px;
-cursor:pointer;
+#hud {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 10;
 }
-
-#shopMenu{
-display:none;
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-width:600px;
-height:400px;
-background:#111;
-border:3px solid white;
-padding:20px;
+.panel {
+  background: var(--glass);
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  text-align: center;
 }
-
-button{
-padding:12px;
-margin:5px;
-font-size:16px;
-cursor:pointer;
+#scoreboard {
+  min-width: 240px;
+}
+#scoreline {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fff;
+}
+#clockline {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  font-weight: 600;
+}
+#status {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lime);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 </style>
 </head>
-
 <body>
 
-<div id="stats">
-<div>Games gespeeld: <span id="played">0</span></div>
-<div>Games gewonnen: <span id="won">0</span></div>
-<div>Munten totaal: <span id="coinsTotal">0</span></div>
-</div>
-
-<div id="shopButton">SHOP</div>
-
-<div id="difficultyMenu">
-<h1>Kies moeilijkheid</h1>
-<button onclick="chooseDifficulty('easy')">🙂 Makkelijk</button>
-<button onclick="chooseDifficulty('hard')">😈 Moeilijk</button>
-<button onclick="chooseDifficulty('impossible')">💀 Impossible</button>
-</div>
-
-<div id="characterMenu">
-<h1>Kies je mannetje</h1>
-<button onclick="startGame('ice')">❄ IJs</button>
-<button onclick="startGame('fire')">🔥 Vuur</button>
-<button onclick="startGame('lightning')">⚡ Bliksem</button>
-</div>
-
 <div id="hud">
-<div>Hits: <span id="hp">0</span> / 3</div>
-<div>Gedood: <span id="kills">0</span></div>
-<div>Munten: <span id="coins">0</span></div>
+  <div id="scoreboard" class="panel">
+    <div id="scoreline">HOM 00 — 00 AWY</div>
+    <div id="clockline">
+      <span id="clock">00:00</span> · <span id="half">WASTAMA MATCH</span>
+    </div>
+  </div>
+  <div id="status" class="panel">Aftrap - Gebruik Pijltjestoetsen & Spatiebalk</div>
 </div>
 
-<div id="gameOver" style="display:none">
-<h1 id="endText"></h1>
-<button onclick="location.reload()">Opnieuw spelen</button>
-</div>
-
-<div id="shopMenu">
-<div style="position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px"
-onclick="closeShop()">✖</div>
-
-<h2>SHOP</h2>
-
-<button onclick="buySkin('red',10)">Rode skin - 10 munten</button>
-<button onclick="buySkin('blue',10)">Blauwe skin - 10 munten</button>
-<button onclick="buySkin('gold',20)">Gouden skin - 20 munten</button>
-
-</div>
-
-<iframe width="0" height="0"
-src="https://www.youtube.com/embed/7MeRV4YxjOM?autoplay=1&loop=1&playlist=7MeRV4YxjOM&controls=0"
-frameborder="0" allow="autoplay"></iframe>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- We laden Three.js in via een stabiele CDN link -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
+(() => {
+  'use strict';
 
-let gamesPlayed=parseInt(localStorage.getItem("played"))||0
-let gamesWon=parseInt(localStorage.getItem("won"))||0
-let totalCoins=parseInt(localStorage.getItem("coins"))||0
+  const THREE = window.THREE;
+  if (!THREE) {
+    document.getElementById('status').textContent = 'THREE.JS LAADFOUT';
+    return;
+  }
 
-played.innerText=gamesPlayed
-won.innerText=gamesWon
-coinsTotal.innerText=totalCoins
+  // Veld- en Fysica Dimensies
+  const PITCH_W = 105;
+  const PITCH_H = 68;
+  const HALF_W = PITCH_W / 2;
+  const HALF_H = PITCH_H / 2;
+  const BALL_R = 0.18;
+  const MAX_SPEED = 7.5; 
+  const ACCEL = 35.0;
+  const FRICTION = 4.0;
 
-let difficulty="easy"
-let powerType="ice"
+  // Spel Variabelen
+  let scene, camera, renderer;
+  let pitch, ball, ballVelocity = new THREE.Vector3(), ballHasPossession = false, possessor = null;
+  let teamA = [], teamB = []; // Team A = Rood (Speler), Team B = Blauw (AI)
+  let activePlayer = null;
+  let playerIndicator;
+  
+  let scoreA = 0, scoreB = 0;
+  let matchTime = 0; // in seconden
+  let gameFrozen = false;
+  let resetTimer = 0;
 
-let scene,camera,renderer,player
-let enemies=[],bullets=[],enemyBullets=[]
-let coinObjects=[]
+  // Input Registratie (Alleen Pijltjestoetsen)
+  const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
-let keys={}
-let yaw=0
-let hits=0
-let kills=0
-let coins=0
-let gameActive=false
+  // Formatie Basissen (X, Z posities op het veld)
+  const formationA = [
+    { role: 'GK', x: -48, z: 0 },
+    { role: 'DEF', x: -30, z: -15 }, { role: 'DEF', x: -35, z: 0 }, { role: 'DEF', x: -30, z: 15 },
+    { role: 'MID', x: -10, z: -20 }, { role: 'MID', x: -12, z: 0 }, { role: 'MID', x: -10, z: 20 },
+    { role: 'ATT', x: 15, z: -15 }, { role: 'ATT', x: 20, z: 0 }, { role: 'ATT', x: 15, z: 15 }, { role: 'ATT', x: 5, z: 0 }
+  ];
 
-let shootTimer=0
-let shootIndex=0
-let aPressed=false
+  const formationB = [
+    { role: 'GK', x: 48, z: 0 },
+    { role: 'DEF', x: 30, z: -15 }, { role: 'DEF', x: 35, z: 0 }, { role: 'DEF', x: 30, z: 15 },
+    { role: 'MID', x: 10, z: -20 }, { role: 'MID', x: 12, z: 0 }, { role: 'MID', x: 10, z: 20 },
+    { role: 'ATT', x: -15, z: -15 }, { role: 'ATT', x: -20, z: 0 }, { role: 'ATT', x: -15, z: 15 }, { role: 'ATT', x: -5, z: 0 }
+  ];
 
-let ownedSkins=JSON.parse(localStorage.getItem("skins"))||["default"]
-let currentSkin="default"
+  // Initialisatie van de 3D Wereld
+  function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a1c11);
+    scene.fog = new THREE.FogExp2(0x0a1c11, 0.005);
 
-document.getElementById("shopButton").onclick=function(){
-shopMenu.style.display="block"
+    // Vaste Broadcast Camera Opstelling
+    camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 1, 200);
+    camera.position.set(0, 32, 42); 
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    // Belichting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 50, 20);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    scene.add(dirLight);
+
+    buildPitch();
+    buildPlayers();
+    buildBall();
+    buildIndicator();
+
+    // Event Listeners voor Keyboard
+    window.addEventListener('keydown', (e) => {
+      if (e.key in keys) keys[e.key] = true;
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        handleSpacebarAction();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key in keys) keys[e.key] = false;
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    resetMatchToKickoff(true);
+    animate();
+  }
+
+  // Bouw het voetbalveld met lijnen
+  function buildPitch() {
+    const pitchGeo = new THREE.PlaneGeometry(PITCH_W, PITCH_H);
+    const pitchMat = new THREE.MeshStandardMaterial({ color: 0x1b4d22, roughness: 0.8 });
+    pitch = new THREE.Mesh(pitchGeo, pitchMat);
+    pitch.rotation.x = -Math.PI / 2;
+    pitch.receiveShadow = true;
+    scene.add(pitch);
+
+    // Witte Veldlijnen (Middencirkel & Grenzen)
+    const centerCircleGeo = new THREE.RingGeometry(9.15, 9.35, 64);
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const centerCircle = new THREE.Mesh(centerCircleGeo, lineMat);
+    centerCircle.rotation.x = -Math.PI / 2;
+    centerCircle.position.y = 0.01;
+    scene.add(centerCircle);
+
+    const centerLineGeo = new THREE.PlaneGeometry(0.2, PITCH_H);
+    const centerLine = new THREE.Mesh(centerLineGeo, lineMat);
+    centerLine.rotation.x = -Math.PI / 2;
+    centerLine.position.y = 0.01;
+    scene.add(centerLine);
+
+    // Doelen Bouwen (Mesh)
+    buildGoal(-HALF_W, 0x111111);
+    buildGoal(HALF_W, 0x111111);
+  }
+
+  function buildGoal(xPos, color) {
+    const goalGroup = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const postGeo = new THREE.CylinderGeometry(0.1, 0.1, 2.44, 16);
+    
+    const leftPost = new THREE.Mesh(postGeo, postMat);
+    leftPost.position.set(0, 1.22, -3.66);
+    goalGroup.add(leftPost);
+
+    const rightPost = new THREE.Mesh(postGeo, postMat);
+    rightPost.position.set(0, 1.22, 3.66);
+    goalGroup.add(rightPost);
+
+    const barGeo = new THREE.CylinderGeometry(0.1, 0.1, 7.32, 16);
+    const crossbar = new THREE.Mesh(barGeo, postMat);
+    crossbar.rotation.z = Math.PI / 2;
+    crossbar.position.set(0, 2.44, 0);
+    goalGroup.add(crossbar);
+
+    goalGroup.position.set(xPos, 0, 0);
+    if(xPos < 0) goalGroup.rotation.y = Math.PI / 2;
+    else goalGroup.rotation.y = -Math.PI / 2;
+    scene.add(goalGroup);
+  }
+
+  // Anatomische poppetjes bouwen (Geen Robots!)
+  function createHumanoidMesh(jerseyColor) {
+    const group = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: jerseyColor, roughness: 0.5 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.6 });
+
+    // Torso (Shirt)
+    const torsoGeo = new THREE.CylinderGeometry(0.4, 0.3, 1.2, 16);
+    const torso = new THREE.Mesh(torsoGeo, bodyMat);
+    torso.position.y = 1.1;
+    torso.castShadow = true;
+    group.add(torso);
+
+    // Hoofd
+    const headGeo = new THREE.SphereGeometry(0.25, 16, 16);
+    const head = new THREE.Mesh(headGeo, skinMat);
+    head.position.y = 1.85;
+    head.castShadow = true;
+    group.add(head);
+
+    // Benen (Voor hardloop-animatie)
+    const legGeo = new THREE.CylinderGeometry(0.12, 0.1, 0.6, 16);
+    const leftLeg = new THREE.Mesh(legGeo, bodyMat);
+    leftLeg.position.set(-0.2, 0.3, 0);
+    leftLeg.castShadow = true;
+    group.add(leftLeg);
+
+    const rightLeg = new THREE.Mesh(legGeo, bodyMat);
+    rightLeg.position.set(0.2, 0.3, 0);
+    rightLeg.castShadow = true;
+    group.add(rightLeg);
+
+    return { root: group, leftLeg, rightLeg };
+  }
+
+  function buildPlayers() {
+    // Bouw Team Rood (Home)
+    formationA.forEach((pos, index) => {
+      const p = createHumanoidMesh(0xcc1111);
+      p.root.position.set(pos.x, 0, pos.z);
+      scene.add(p.root);
+      teamA.push({
+        id: 'A' + index, team: 'A', role: pos.role, base: new THREE.Vector3(pos.x, 0, pos.z),
+        pos: p.root.position, vel: new THREE.Vector3(), meshData: p, hasBall: false
+      });
+    });
+
+    // Bouw Team Blauw (Away)
+    formationB.forEach((pos, index) => {
+      const p = createHumanoidMesh(0x1111cc);
+      p.root.position.set(pos.x, 0, pos.z);
+      scene.add(p.root);
+      teamB.push({
+        id: 'B' + index, team: 'B', role: pos.role, base: new THREE.Vector3(pos.x, 0, pos.z),
+        pos: p.root.position, vel: new THREE.Vector3(), meshData: p, hasBall: false
+      });
+    });
+
+    activePlayer = teamA[8]; // Begin met de Spits als actieve speler
+  }
+
+  function buildBall() {
+    const ballGeo = new THREE.SphereGeometry(BALL_R, 32, 32);
+    const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+    ball = new THREE.Mesh(ballGeo, ballMat);
+    ball.position.set(0, BALL_R, 0);
+    ball.castShadow = true;
+    scene.add(ball);
+  }
+
+  function buildIndicator() {
+    const indGeo = new THREE.ConeGeometry(0.3, 0.6, 4);
+    const indMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    playerIndicator = new THREE.Mesh(indGeo, indMat);
+    playerIndicator.rotation.x = Math.PI; 
+    scene.add(playerIndicator);
+  }
+
+Wees voorzichtig met code.
+// De Spatiebalk actie: Intelligent schakelen tussen passen en schieten
+function handleSpacebarAction() {
+if (gameFrozen || !activePlayer) return;
+// Check of de actieve rode speler de bal heeft
+if (ballHasPossession && possessor === activePlayer) {
+const distanceToGoal = activePlayer.pos.distanceTo(new THREE.Vector3(HALF_W, 0, 0));
+if (distanceToGoal < 22) {
+// SCHOT OP DOEL (binnen de aanvalszone)
+document.getElementById('status').textContent = "Schot op doel!";
+ballHasPossession = false;
+possessor.hasBall = false;
+possessor = null;
+// Schietrichting vector bepalen naar het doel met een kleine willekeurige hoekafwijking
+const targetGoal = new THREE.Vector3(HALF_W, 0.5, (Math.random() - 0.5) * 6);
+const shootDir = new THREE.Vector3().subVectors(targetGoal, ball.position).normalize();
+ballVelocity.copy(shootDir).multiplyScalar(28.0); // Harde schotsnelheid
+} else {
+// PASS NAAR TEAMGENOOT
+let bestTeammate = null;
+let maxDot = -1;
+// Bepaal de kijkrichting van de huidige speler op basis van zijn snelheidsvector of standaard vooruit
+let lookDir = new THREE.Vector3(1, 0, 0);
+if (activePlayer.vel.lengthSq() > 0.1) {
+lookDir.copy(activePlayer.vel).normalize();
 }
-
-function closeShop(){
-shopMenu.style.display="none"
+teamA.forEach(teammate => {
+if (teammate !== activePlayer && teammate.role !== 'GK') {
+const toTeammate = new THREE.Vector3().subVectors(teammate.pos, activePlayer.pos).normalize();
+const dot = lookDir.dot(toTeammate);
+if (dot > maxDot) {
+maxDot = dot;
+bestTeammate = teammate;
 }
-
-function buySkin(color,cost){
-
-if(totalCoins<cost){
-alert("Niet genoeg munten")
-return
 }
-
-totalCoins-=cost
-coinsTotal.innerText=totalCoins
-localStorage.setItem("coins",totalCoins)
-
-ownedSkins.push(color)
-localStorage.setItem("skins",JSON.stringify(ownedSkins))
-
-currentSkin=color
-
-alert("Skin gekocht!")
-
+});
+if (bestTeammate && maxDot > 0.4) {
+document.getElementById('status').textContent = "Pass naar teamgenoot!";
+ballHasPossession = false;
+possessor.hasBall = false;
+possessor = null;
+const passDir = new THREE.Vector3().subVectors(bestTeammate.pos, ball.position).normalize();
+ballVelocity.copy(passDir).multiplyScalar(16.0); // Pass snelheid
 }
-
-function chooseDifficulty(mode){
-difficulty=mode
-difficultyMenu.style.display="none"
-characterMenu.style.display="block"
 }
-
-function startGame(type){
-
-powerType=type
-
-gamesPlayed++
-localStorage.setItem("played",gamesPlayed)
-played.innerText=gamesPlayed
-
-characterMenu.style.display="none"
-hud.style.display="block"
-
-gameActive=true
-
-scene=new THREE.Scene()
-
-camera=new THREE.PerspectiveCamera(
-75,
-window.innerWidth/window.innerHeight,
-0.1,
-2000
-)
-
-renderer=new THREE.WebGLRenderer()
-renderer.setSize(window.innerWidth,window.innerHeight)
-document.body.appendChild(renderer.domElement)
-
-scene.add(new THREE.AmbientLight(0xffffff,1))
-
-let sea=new THREE.Mesh(
-new THREE.CircleGeometry(2000,64),
-new THREE.MeshBasicMaterial({color:0x1e90ff})
-)
-
-sea.rotation.x=-Math.PI/2
-scene.add(sea)
-
-let island=new THREE.Mesh(
-new THREE.CircleGeometry(600,64),
-new THREE.MeshBasicMaterial({color:0x228B22})
-)
-
-island.rotation.x=-Math.PI/2
-island.position.y=0.1
-scene.add(island)
-
-/* TREES */
-
-for(let i=0;i<25;i++){
-
-let trunk=new THREE.Mesh(
-new THREE.CylinderGeometry(2,2,20),
-new THREE.MeshBasicMaterial({color:0x8b4513})
-)
-
-let leaves=new THREE.Mesh(
-new THREE.ConeGeometry(10,25,8),
-new THREE.MeshBasicMaterial({color:0x228B22})
-)
-
-trunk.position.set((Math.random()-0.5)*900,10,(Math.random()-0.5)*900)
-leaves.position.set(trunk.position.x,25,trunk.position.z)
-
-scene.add(trunk)
-scene.add(leaves)
-
 }
-
-/* ROCKS */
-
-for(let i=0;i<15;i++){
-
-let rock=new THREE.Mesh(
-new THREE.DodecahedronGeometry(15),
-new THREE.MeshBasicMaterial({color:0x777777})
-)
-
-rock.position.set((Math.random()-0.5)*900,8,(Math.random()-0.5)*900)
-
-scene.add(rock)
-
 }
-
-/* PLAYER */
-
-let color=0x00ffff
-if(currentSkin==="red")color=0xff0000
-if(currentSkin==="blue")color=0x0066ff
-if(currentSkin==="gold")color=0xffcc00
-
-player=new THREE.Mesh(
-new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:color})
-)
-
-player.position.y=6
-scene.add(player)
-
-/* BOTS */
-
-let botCount=5
-if(difficulty==="hard")botCount=10
-if(difficulty==="impossible")botCount=18
-
-for(let i=0;i<botCount;i++){
-
-let bot=new THREE.Mesh(
-new THREE.BoxGeometry(8,12,8),
-new THREE.MeshBasicMaterial({color:0xffffff})
-)
-
-bot.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
-
-bot.userData.moveDir=new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
-bot.userData.freeze=0
-bot.userData.noShoot=0
-bot.userData.permaFreeze=false
-
-scene.add(bot)
-enemies.push(bot)
-
+// Match reset routine na een goal of bij de start
+function resetMatchToKickoff(isStart) {
+ballVelocity.set(0, 0, 0);
+ballHasPossession = true;
+// Zet iedereen terug in hun vaste formatiebasis
+teamA.forEach(p => { p.pos.copy(p.base); p.vel.set(0,0,0); p.hasBall = false; });
+teamB.forEach(p => { p.pos.copy(p.base); p.vel.set(0,0,0); p.hasBall = false; });
+if (isStart || scoreB > scoreA) {
+// Team A neemt de aftrap
+activePlayer = teamA[8];
+possessor = teamA[8];
+ball.position.set(0, BALL_R, 0);
+} else {
+// Team B neemt de aftrap
+possessor = teamB[8];
+ball.position.set(0, BALL_R, 0);
 }
-
-/* COINS */
-
-let coinCount=5
-if(difficulty==="hard")coinCount=7
-if(difficulty==="impossible")coinCount=10
-
-for(let i=0;i<coinCount;i++){
-
-let coin=new THREE.Mesh(
-new THREE.CylinderGeometry(4,4,2,16),
-new THREE.MeshBasicMaterial({color:0xffff00})
-)
-
-coin.rotation.x=Math.PI/2
-coin.position.set((Math.random()-0.5)*500,6,(Math.random()-0.5)*500)
-
-scene.add(coin)
-coinObjects.push(coin)
-
+possessor.hasBall = true;
+gameFrozen = false;
 }
-
-/* CONTROLS */
-
-document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true
-if(e.code==="Space")shoot()
-if(e.key.toLowerCase()==="a")aPressed=true
-})
-
-document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false
-if(e.key.toLowerCase()==="a")aPressed=false
-})
-
-document.addEventListener("click",shoot)
-
-document.addEventListener("mousemove",e=>{
-yaw-=e.movementX*0.002
-})
-
-animate()
-
+// De hoofd game-loop
+let lastTime = performance.now();
+function animate() {
+requestAnimationFrame(animate);
+const currentTime = performance.now();
+let dt = (currentTime - lastTime) / 1000;
+if (dt > 0.1) dt = 0.1;
+lastTime = currentTime;
+if (!gameFrozen) {
+matchTime += dt * 5; // Versnel de tijd (90 min duurt ca. 5 minuten)
+updateClockUI();
+updateGameplay(dt);
+} else {
+resetTimer -= dt;
+if (resetTimer <= 0) {
+resetMatchToKickoff(false);
 }
-
-function explode(position){
-
-let geo=new THREE.SphereGeometry(6)
-let mat=new THREE.MeshBasicMaterial({color:0xff6600})
-
-let boom=new THREE.Mesh(geo,mat)
-boom.position.copy(position)
-
-scene.add(boom)
-
-setTimeout(()=>{
-scene.remove(boom)
-},300)
-
 }
-
-function shoot(){
-
-let bullet=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xffffff})
-)
-
-bullet.position.copy(player.position)
-bullet.userData.dir=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw))
-
-scene.add(bullet)
-bullets.push(bullet)
-
+// Camera volgt de bal vloeiend over de X-as (Broadcast-stijl)
+camera.position.x += (ball.position.x - camera.position.x) * 0.05;
+// Speler-indicator updaten boven het hoofd van de actieve rode speler
+if (activePlayer) {
+playerIndicator.position.set(activePlayer.pos.x, 2.5 + Math.sin(currentTime * 0.005) * 0.1, activePlayer.pos.z);
+playerIndicator.rotation.y += 0.02;
 }
-
-function animate(){
-
-requestAnimationFrame(animate)
-if(!gameActive)return
-
-for(let c of coinObjects){
-c.rotation.y+=0.05
+renderer.render(scene, camera);
 }
-
-if(keys["arrowup"]||keys["z"])player.position.z-=4
-if(keys["arrowdown"]||keys["s"])player.position.z+=4
-if(keys["arrowleft"]||keys["q"])player.position.x-=4
-if(keys["arrowright"]||keys["d"])player.position.x+=4
-
-if(player.position.length()>600)endGame("VERDRONKEN")
-
-for(let i=bullets.length-1;i>=0;i--){
-
-let b=bullets[i]
-b.position.add(b.userData.dir.clone().multiplyScalar(10))
-
-for(let j=enemies.length-1;j>=0;j--){
-
-let bot=enemies[j]
-
-if(b.position.distanceTo(bot.position)<8){
-
-explode(bot.position)
-
-if(aPressed){
-
-if(powerType==="ice")bot.userData.freeze=180
-if(powerType==="fire")bot.userData.noShoot=360
-if(powerType==="lightning")bot.userData.permaFreeze=true
-
+function updateClockUI() {
+const minutes = Math.floor(matchTime / 60);
+const seconds = Math.floor(matchTime % 60);
+document.getElementById('clock').textContent =
+(minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 }
-
-scene.remove(bot)
-enemies.splice(j,1)
-
-kills++
-document.getElementById("kills").innerText=kills
-
-scene.remove(b)
-bullets.splice(i,1)
-
-if(enemies.length===0){
-
-gamesWon++
-localStorage.setItem("won",gamesWon)
-
-let reward=3
-if(difficulty==="hard")reward=5
-if(difficulty==="impossible")reward=7
-
-totalCoins+=reward+coins
-localStorage.setItem("coins",totalCoins)
-
-endGame("GEWONNEN!")
-
+function updateGameplay(dt) {
+// 1. INPUT AFHANDELING VOOR DE ACTIEVE RODE SPELER
+let moveX = 0, moveZ = 0;
+if (keys.ArrowUp) moveZ = -1;
+if (keys.ArrowDown) moveZ = 1;
+if (keys.ArrowLeft) moveX = -1;
+if (keys.ArrowRight) moveX = 1;
+let inputDir = new THREE.Vector3(moveX, 0, moveZ);
+if (inputDir.lengthSq() > 0) {
+inputDir.normalize();
+activePlayer.vel.addScaledVector(inputDir, ACCEL * dt);
+if (activePlayer.vel.length() > MAX_SPEED) activePlayer.vel.setLength(MAX_SPEED);
+} else {
+activePlayer.vel.addScaledVector(activePlayer.vel, -FRICTION * dt);
 }
-
-break
-
+// Beweeg de bestuurde speler en animeer de benen
+activePlayer.pos.addScaledVector(activePlayer.vel, dt);
+animateLegs(activePlayer, dt);
+limitToPitch(activePlayer.pos);
+if (activePlayer.vel.lengthSq() > 0.01) {
+activePlayer.meshData.root.lookAt(activePlayer.pos.x + activePlayer.vel.x, activePlayer.pos.y, activePlayer.pos.z + activePlayer.vel.z);
 }
-
+// 2. BALL LOGICA & FYSTICA
+if (ballHasPossession && possessor) {
+// Hang de bal stabiel voor de voeten van de speler die hem heeft
+const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(possessor.meshData.root.quaternion);
+ball.position.copy(possessor.pos).addScaledVector(forward, 0.5);
+ball.position.y = BALL_R;
+ballVelocity.set(0, 0, 0);
+} else {
+// Vrije balbeweging met wrijving
+ball.position.addScaledVector(ballVelocity, dt);
+ballVelocity.addScaledVector(ballVelocity, -GRASS_FRICTION * dt);
+// Check of er gescoord wordt
+checkGoalTriggers();
 }
-
+// 3. TACTISCHE AI-LOGICA MET ZONE-BEPERKING & MAX 2 JAGERS
+let jagersA = 0, jagersB = 0;
+// Sorteer beide teams op basis van wie het dichtst bij de bal staat
+teamA.forEach(p => p.distToBall = p.pos.distanceTo(ball.position));
+teamB.forEach(p => p.distToBall = p.pos.distanceTo(ball.position));
+teamA.sort((a, b) => a.distToBall - b.distToBall);
+teamB.sort((a, b) => a.distToBall - b.distToBall);
+// Update Team A (Rode AI-teamgenoten)
+teamA.forEach(p => {
+if (p === activePlayer) return; // Sla de bestuurde speler over
+if (p.role === 'GK') {
+runGoalKeeperAI(p, dt);
+return;
 }
-
-for(let i=coinObjects.length-1;i>=0;i--){
-
-let c=coinObjects[i]
-
-if(player.position.distanceTo(c.position)<10){
-
-scene.remove(c)
-coinObjects.splice(i,1)
-
-coins++
-document.getElementById("coins").innerText=coins
-
+const balInZone = isBallInZone(p.role, 'A');
+// Mag jagen als hij tot de 2 dichtstbijzijnde behoort én de bal in zijn linie/zone ligt
+if (jagersA < 2 && balInZone && !ballHasPossession) {
+moveTowards(p, ball.position, dt);
+jagersA++;
+} else {
+moveTowards(p, p.base, dt); // Keer terug naar tactische liniepositie
 }
-
+});
+// Update Team B (Blauwe AI-tegenstanders)
+const AI_heeft_bal = (possessor && possessor.team === 'B');
+teamB.forEach(p => {
+if (p.role === 'GK') {
+runGoalKeeperAI(p, dt);
+return;
 }
-
-for(let bot of enemies){
-
-if(bot.userData.permaFreeze)continue
-
-if(bot.userData.freeze>0){
-bot.userData.freeze--
-continue
+if (p === possessor) {
+// AI STORMEN DIRECT OP JOUW DOEL AF OM TE SCOREN
+const targetGoal = new THREE.Vector3(-HALF_W, 0, 0);
+moveTowards(p, targetGoal, dt);
+// Schiet direct als de AI dicht genoeg bij het zestienmetergebied is
+if (p.pos.distanceTo(targetGoal) < 20) {
+ballHasPossession = false;
+p.hasBall = false;
+possessor = null;
+const shootDir = new THREE.Vector3().subVectors(targetGoal, ball.position).normalize();
+ballVelocity.copy(shootDir).multiplyScalar(22.0);
+document.getElementById('status').textContent = "Team Blauw haalt uit!";
 }
-
-bot.position.add(bot.userData.moveDir.clone().multiplyScalar(0.5))
-
-if(Math.random()<0.02){
-
-bot.userData.moveDir=
-new THREE.Vector3(Math.random()-0.5,0,Math.random()-0.5).normalize()
-
+return;
 }
-
+const balInZone = isBallInZone(p.role, 'B');
+// Jagen op de bal als je verdedigt, of meelopen naar voren als je aanvalt
+if (jagersB < 2 && !AI_heeft_bal && (balInZone || p.distToBall < 15)) {
+moveTowards(p, ball.position, dt);
+jagersB++;
+} else {
+// Behoud positie in linie, verspreid over het veld
+let targetPos = p.base.clone();
+if (AI_heeft_bal) targetPos.x -= 10; // Schuif collectief op naar voren
+moveTowards(p, targetPos, dt);
 }
-
-shootTimer++
-
-if(shootTimer>60){
-
-shootTimer=0
-
-let bot=enemies[shootIndex % enemies.length]
-
-if(bot && bot.userData.noShoot<=0)shootBot(bot)
-
-shootIndex++
-
+});
+// 4. IN-GAME BAL AFPAKKEN EN TACKELEN (Beide Kanten Op)
+if (!ballHasPossession) {
+// Als de bal vrij rolt, kijk wie hem als eerste oppikt binnen 0.8 meter
+let allPlayers = [...teamA, ...teamB];
+for (let p of allPlayers) {
+if (p.role !== 'GK' && p.pos.distanceTo(ball.position) < 0.8) {
+ballHasPossession = true;
+possessor = p;
+p.hasBall = true;
+if (p.team === 'A') {
+activePlayer = p; // Schakel direct over naar de persoon die de bal oppikt
+document.getElementById('status').textContent = "Je hebt de bal!";
+} else {
+document.getElementById('status').textContent = "Blauw heeft de bal afgepakt!";
 }
-
-for(let bot of enemies){
-if(bot.userData.noShoot>0)bot.userData.noShoot--
+break;
 }
-
-for(let i=enemyBullets.length-1;i>=0;i--){
-
-let b=enemyBullets[i]
-
-b.position.add(b.userData.dir.clone().multiplyScalar(8))
-
-if(b.position.distanceTo(player.position)<8){
-
-hits++
-hp.innerText=hits
-
-scene.remove(b)
-enemyBullets.splice(i,1)
-
-if(hits>=3)endGame("GAME OVER")
-
 }
-
+} else if (possessor) {
+// Als iemand de bal al heeft, kijk of de tegenpartij hem kan tackelen/afpakken
+let jagersTeam = (possessor.team === 'A') ? teamB : teamA;
+for (let jager of jagersTeam) {
+if (jager.role !== 'GK' && jager.pos.distanceTo(possessor.pos) < 0.8) {
+// Wissel van balbezit!
+possessor.hasBall = false;
+possessor = jager;
+jager.hasBall = true;
+if (jager.team === 'A') {
+activePlayer = jager; // Word direct automatisch de rode speler met de bal!
+document.getElementById('status').textContent = "Bal veroverd!";
+} else {
+document.getElementById('status').textContent = "Blauw tackelt en pakt de bal!";
 }
-
-camera.position.x=player.position.x-Math.sin(yaw)*40
-camera.position.z=player.position.z+Math.cos(yaw)*40
-camera.position.y=25
-
-camera.lookAt(player.position)
-
-renderer.render(scene,camera)
-
+break;
 }
-
-function shootBot(bot){
-
-let dir=player.position.clone().sub(bot.position).normalize()
-
-let bullet=new THREE.Mesh(
-new THREE.SphereGeometry(2),
-new THREE.MeshBasicMaterial({color:0xff0000})
-)
-
-bullet.position.copy(bot.position)
-bullet.userData.dir=dir
-
-scene.add(bullet)
-enemyBullets.push(bullet)
-
 }
-
-function endGame(text){
-
-gameActive=false
-endText.innerText=text
-gameOver.style.display="block"
-
 }
+// AUTOSWITCH BIJ PASSING REBOUNDS (Spel mag nooit stilvallen)
+// Als de bal losgelaten is en naar iemand toe rolt, wissel automatisch naar de dichtstbijzijnde rode speler
+if (!ballHasPossession && ballVelocity.lengthSq() > 2) {
+const closestRed = teamA.filter(p => p.role !== 'GK').sort((a,b) => a.pos.distanceTo(ball.position) - b.pos.distanceTo(ball.position))[0];
+if (closestRed && closestRed.pos.distanceTo(ball.position) < 4.5) {
+activePlayer = closestRed;
+}
+}
+}
+// Keeper AI Logica: Beweegt mee over de Z-as met de bal, maar blijft in de goal
+function runGoalKeeperAI(p, dt) {
+let targetZ = ball.position.z;
+if (targetZ > 6.0) targetZ = 6.0;
+if (targetZ < -6.0) targetZ = -6.0;
+p.vel.set(0, 0, targetZ - p.pos.z);
+if(p.vel.lengthSq() > 0.01) {
+p.vel.normalize().multiplyScalar(MAX_SPEED * 0.8);
+p.pos.addScaledVector(p.vel, dt);
+animateLegs(p, dt);
+}
+}
+// Helperfuncties voor AI Beweging en Grenzen
+function moveTowards(p, target, dt) {
+let dir = new THREE.Vector3().subVectors(target, p.pos);
+dir.y = 0;
+if (dir.lengthSq() > 0.1) {
+dir.normalize();
+p.vel.copy(dir).multiplyScalar(MAX_SPEED * 0.85);
+p.pos.addScaledVector(p.vel, dt);
+p.meshData.root.lookAt(p.pos.x + p.vel.x, p.pos.y, p.pos.z + p.vel.z);
+animateLegs(p, dt);
+} else {
+p.vel.set(0,0,0);
+}
+limitToPitch(p.pos);
+}
+function isBallInZone(role, team) {
+const bx = ball.position.x;
+if (role === 'DEF') return team === 'A' ? bx < -15 : bx > 15;
+if (role === 'MID') return bx >= -20 && bx <= 20;
+if (role === 'ATT') return team === 'A' ? bx > -10 : bx < 10;
+return true;
+}
+function animateLegs(player, dt) {
+const speed = player.vel.length();
+if (speed > 0.2) {
+const angle = Math.sin(performance.now() * 0.012) * 0.6;
+player.meshData.leftLeg.rotation.x = angle;
+player.meshData.rightLeg.rotation.x = -angle;
+} else {
+player.meshData.leftLeg.rotation.x = 0;
+player.meshData.rightLeg.rotation.x = 0;
+}
+}
+function limitToPitch(pos) {
+if (pos.x < -HALF_W) pos.x = -HALF_W;
+if (pos.x > HALF_W) pos.x = HALF_W;
+if (pos.z < -HALF_H) pos.z = -HALF_H;
+if (pos.z > HALF_H) pos.z = HALF_H;
+}
+// Check of de bal over de doellijn gaat (Goal triggers)
+function checkGoalTriggers() {
+if (Math.abs(ball.position.z) < 3.8 && ball.position.y < 2.5) {
+if (ball.position.x < -HALF_W) {
+// GOAL TEGENSTANDER BLAUW!
+scoreB++;
+triggerGoalSequence("GOAL VOOR TEAM BLAUW!");
+} else if (ball.position.x > HALF_W) {
+// GOAL JOUW TEAM ROOD!
+scoreA++;
+triggerGoalSequence("WASTAMA GOAL!!! JIJ SCOORT!");
+}
+}
+// Als de bal buiten de lijnen gaat zonder goal, kaats hem direct terug naar de dichtstbijzijnde speler zodat het spel nooit stopt
+if (Math.abs(ball.position.x) > HALF_W + 1 || Math.abs(ball.position.z) > HALF_H + 1) {
+ball.position.set(Math.random() * 20 - 10, BALL_R, Math.random() * 20 - 10);
+ballVelocity.set(0,0,0);
+}
+}
+function triggerGoalSequence(msg) {
+gameFrozen = true;
+resetTimer = 3.0; // 3 seconden pauze/viering
+document.getElementById('scoreline').textContent =
+"HOM " + (scoreA < 10 ? '0' : '') + scoreA + " — " + (scoreB < 10 ? '0' : '') + scoreB + " AWY";
+document.getElementById('status').textContent = msg;
+}
+// Start de applicatie zodra de pagina geladen is
+window.onload = init;
+})();
 
-</script>
 
-</body>
-</html> 
+
+<FollowUp>
+Sla dit bestand op als **`index.html`** op je computer en open het in een browser (zoals Google Chrome) om je game direct te spelen. Laat me gerust weten:
+* Of de **spelerbeweging met de pijltjestoetsen** nu direct goed reageert.
+* Of de **keeper-fysica** nu gebalanceerd genoeg is om mooie goals te maken via de spatiebalk!
+</FollowUp>
