@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -32,34 +31,46 @@ h1{font-size:clamp(40px,8vw,70px);line-height:.95;font-style:italic;margin:20px 
 button{pointer-events:auto;cursor:pointer;border:0;border-radius:10px;padding:15px 23px;background:linear-gradient(100deg,#43dfff,#83ffc1);color:#071323;font-weight:900;font-size:14px}
 button:hover{filter:brightness(1.1)}
 #menu button{margin-top:15px}
-@media(max-width:600px){.brand{top:10px;left:10px;font-size:11px}.score{top:48px;font-size:19px;padding:9px 14px}.controls{left:8px;bottom:8px;font-size:10px;padding:9px}}
+@media(max-width:600px){
+ .brand{top:10px;left:10px;font-size:11px}
+ .score{top:48px;font-size:19px;padding:9px 14px}
+ .controls{left:8px;bottom:8px;font-size:10px;padding:9px}
+}
 </style>
 </head>
 <body>
 <div id="hud">
   <div class="brand">WASTAMA <span>FOOTBALL 3D</span></div>
-  <div class="score"><span class="red">RED</span> <span id="score">0 - 0</span> <span class="blue">BLUE</span><div id="matchClock" style="font-size:13px;letter-spacing:1px;margin-top:5px">00:00 / 90:00</div></div>
+  <div class="score">
+    <span class="red">RED</span>
+    <span id="score">0 - 0</span>
+    <span class="blue">BLUE</span>
+    <div id="matchClock" style="font-size:13px;letter-spacing:1px;margin-top:5px">00:00 / 90:00</div>
+  </div>
   <div id="camera">CAMERA: BROADCAST · C</div>
   <div id="toast"></div>
   <div id="goal">GOAL!!</div>
   <div class="controls">
     <b>BESTURING</b><br>
     <span class="key">W A S D</span> / <span class="key">↑ ↓ ← →</span> Bewegen<br>
-    <span class="key">E</span> Vasthouden = schot laden<br>
+    <span class="key">SPATIE</span> Vasthouden = schieten · kort tikken = passen<br>
     <span class="key">MUIS</span> Vasthouden = schieten<br>
     <span class="key">C</span> Camera wisselen<br>
-    <span class="key">SPATIE</span> Andere speler kiezen<br>
-    <span class="key">R</span> Bal naar midden<br>
+    <span class="key">E</span> Andere speler kiezen<br>
+    <span class="key">R</span> Stoppen en naar beginscherm<br>
     Blijf dichtbij om de bal af te pakken
   </div>
-  <div id="power"><div id="powerText">SCHOTKRACHT 0%</div><div id="track"><div id="fill"></div></div></div>
+  <div id="power">
+    <div id="powerText">SCHOTKRACHT 0%</div>
+    <div id="track"><div id="fill"></div></div>
+  </div>
 </div>
 
 <div id="menu">
   <div class="card">
     <small>WASTAMA STUDIOS PRESENTS</small>
     <h1>FOOTBALL<br><span style="color:#43dfff">3D</span></h1>
-    <p>Een eigen 3D-voetbalgame. Speel met je team tegen de AI, steel de bal en scoor in een groot stadion.</p>
+    <p>Een eigen 3D-voetbalgame. Speel met een volledig team tegen de AI, steel de bal en scoor in een groot stadion.</p>
     <button id="play">START WEDSTRIJD</button>
   </div>
 </div>
@@ -68,13 +79,14 @@ button:hover{filter:brightness(1.1)}
 <script>
 (() => {
 "use strict";
-const $=id=>document.getElementById(id);
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x8cc9ef);
-scene.fog=new THREE.Fog(0x8cc9ef,100,230);
 
-const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
-const renderer=new THREE.WebGLRenderer({antialias:true});
+const $ = id => document.getElementById(id);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8cc9ef);
+scene.fog = new THREE.Fog(0x8cc9ef,100,230);
+
+const camera = new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;
@@ -95,6 +107,7 @@ scene.add(sun);
 
 const material=(color,roughness=.8,metalness=0)=>
   new THREE.MeshStandardMaterial({color,roughness,metalness});
+
 const grass=material(0x197d42);
 const stripeA=material(0x258b4c);
 const stripeB=material(0x197d42);
@@ -113,6 +126,7 @@ function box(w,h,d,mat,x,y,z,parent=scene){
   parent.add(mesh);
   return mesh;
 }
+
 function line(points,color=0xffffff){
   const geometry=new THREE.BufferGeometry().setFromPoints(
     points.map(p=>new THREE.Vector3(p[0],p[1],p[2]))
@@ -121,18 +135,23 @@ function line(points,color=0xffffff){
   scene.add(object);
   return object;
 }
+
 function rectLine(w,d,x,z,y=.06){
-  return line([[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],
-    [x+w/2,y,z+d/2],[x-w/2,y,z+d/2],[x-w/2,y,z-d/2]]);
+  return line([
+    [x-w/2,y,z-d/2],[x+w/2,y,z-d/2],
+    [x+w/2,y,z+d/2],[x-w/2,y,z+d/2],
+    [x-w/2,y,z-d/2]
+  ]);
 }
 
-const FIELD_W=104,FIELD_L=168;
-const GOAL_W=16,GOAL_H=7;
-const MATCH_MINUTES=90,SECONDS_PER_GAME_MINUTE=14;
+const FIELD_W=104, FIELD_L=168;
+const GOAL_W=16, GOAL_H=7;
+const MATCH_MINUTES=90, SECONDS_PER_GAME_MINUTE=14;
 let matchSeconds=0,matchEnded=false;
 
 box(230,.8,190,material(0x263740),0,-.8,0);
 box(FIELD_W,.3,FIELD_L,grass,0,-.15,0);
+
 for(let i=0;i<12;i++){
   box(FIELD_W,.015,FIELD_L/12,i%2?stripeA:stripeB,
     0,.012,-FIELD_L/2+FIELD_L/24+i*FIELD_L/12);
@@ -149,6 +168,7 @@ function circleLine(radius){
   line(pts);
 }
 circleLine(9.15);
+
 const centerFill=new THREE.Mesh(new THREE.CircleGeometry(8.95,64),grass);
 centerFill.rotation.x=-Math.PI/2;
 centerFill.position.y=.045;
@@ -158,11 +178,13 @@ circleLine(9.15);
 for(const s of [-1,1]){
   rectLine(52,24,0,s*(FIELD_L/2-19));
   rectLine(28,9,0,s*(FIELD_L/2-6));
+
   const gz=s*(FIELD_L/2+2);
   const gm=material(0xf4f7ff,.4,.15);
   box(.4,GOAL_H,.4,gm,-GOAL_W/2,GOAL_H/2,gz);
   box(.4,GOAL_H,.4,gm,GOAL_W/2,GOAL_H/2,gz);
   box(GOAL_W+.4,.4,.4,gm,0,GOAL_H,gz);
+
   for(let x=-8;x<=8;x+=2){
     line([[x,0,gz],[x,GOAL_H-.2,gz],[x,GOAL_H-.2,gz-s*4],[x,0,gz-s*4]],0xd8e8f6);
     line([[x,0,gz],[x,0,gz-s*4]],0xd8e8f6);
@@ -172,6 +194,7 @@ for(const s of [-1,1]){
     line([[-GOAL_W/2,y,gz-s*4],[GOAL_W/2,y,gz-s*4]],0xd8e8f6);
   }
 }
+
 for(const side of [-1,1]){
   box(12,3,FIELD_L+24,dark,side*(FIELD_W/2+7),1.2,0);
   for(let r=0;r<5;r++){
@@ -182,6 +205,7 @@ for(const side of [-1,1]){
   box(.6,14,1,dark,side*(FIELD_W/2+12),8,0);
   box(17,.8,FIELD_L+32,dark,side*(FIELD_W/2+8),10,0);
 }
+
 for(const x of [-1,1]){
   for(const z of [-1,1]){
     box(.5,23,.5,dark,x*(FIELD_W/2+15),11.5,z*(FIELD_L/2-10));
@@ -194,15 +218,21 @@ for(const x of [-1,1]){
 
 const ballGroup=new THREE.Group();
 scene.add(ballGroup);
-const ball=new THREE.Mesh(new THREE.SphereGeometry(.72,32,24),material(0xfafafa,.35));
+const ball=new THREE.Mesh(
+  new THREE.SphereGeometry(.72,32,24),
+  material(0xfafafa,.35)
+);
 ball.castShadow=true;
 ball.receiveShadow=true;
 ballGroup.add(ball);
+
 const patchMat=material(0x151922,.55);
 for(let i=0;i<5;i++){
   const patch=new THREE.Mesh(new THREE.CircleGeometry(.22,5),patchMat);
   patch.position.set(Math.cos(i*1.256)*.48,Math.sin(i*1.256)*.48,.48);
-  patch.lookAt(patch.position.clone().multiplyScalar(2).add(new THREE.Vector3(0,0,1)));
+  patch.lookAt(patch.position.clone().multiplyScalar(2).add(
+    new THREE.Vector3(0,0,1)
+  ));
   ballGroup.add(patch);
 }
 
@@ -210,45 +240,72 @@ const R=.72,gravity=25;
 const ballPos=new THREE.Vector3(0,R,0);
 const ballVel=new THREE.Vector3();
 let ballHolder=null;
-let stealTarget=null,stealTimer=0;
+let stealTarget=null,stealTimer=0,loseTarget=null,loseTimer=0;
 
 function resetBall(){
-  ballHolder=null;stealTarget=null;stealTimer=0;
+  ballHolder=null;
+  stealTarget=null;
+  stealTimer=0;
+  loseTarget=null;
+  loseTimer=0;
   ballPos.set(0,R,0);
   ballVel.set(0,0,0);
   ballGroup.position.copy(ballPos);
 }
 
-function makePlayer(team,number,role){
+function makePlayer(teamMat,number){
   const group=new THREE.Group();
-  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.48,.85,5,10),team);
-  torso.position.y=2.05;torso.castShadow=true;group.add(torso);
+  const torso=new THREE.Mesh(
+    new THREE.CapsuleGeometry(.48,.85,5,10),teamMat
+  );
+  torso.position.y=2.05;
+  torso.castShadow=true;
+  group.add(torso);
+
   const head=new THREE.Mesh(new THREE.SphereGeometry(.35,16,12),skin);
-  head.position.y=3.05;head.castShadow=true;group.add(head);
+  head.position.y=3.05;
+  head.castShadow=true;
+  group.add(head);
+
   const shorts=new THREE.Mesh(new THREE.BoxGeometry(.85,.4,.55),dark);
-  shorts.position.y=1.35;group.add(shorts);
+  shorts.position.y=1.35;
+  group.add(shorts);
+
   const legs=[];
   for(const x of [-.25,.25]){
     const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.65,4,8),dark);
-    leg.position.set(x,.72,0);group.add(leg);legs.push(leg);
+    leg.position.set(x,.72,0);
+    group.add(leg);
+    legs.push(leg);
+
     const shoe=new THREE.Mesh(new THREE.BoxGeometry(.26,.15,.4),black);
-    shoe.position.set(x,.17,-.08);group.add(shoe);
+    shoe.position.set(x,.17,-.08);
+    group.add(shoe);
   }
+
   const arms=[];
   for(const x of [-.57,.57]){
-    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.62,4,8),team);
-    arm.position.set(x,2.05,0);group.add(arm);arms.push(arm);
+    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.62,4,8),teamMat);
+    arm.position.set(x,2.05,0);
+    group.add(arm);
+    arms.push(arm);
   }
-  const badge=new THREE.Mesh(new THREE.CircleGeometry(.13,12),
-    material(number%2?0xffe45b:0xffffff));
-  badge.position.set(0,2.25,-.49);group.add(badge);
+
+  const badge=new THREE.Mesh(
+    new THREE.CircleGeometry(.13,12),
+    material(number%2?0xffe45b:0xffffff)
+  );
+  badge.position.set(0,2.25,-.49);
+  group.add(badge);
   scene.add(group);
-  return {group,legs,arms,role,team:team===blueMat?"blue":"red",homeX:0,homeZ:0};
+  return {group,legs,arms};
 }
 
-// Exact 7 players per team: 2 defenders, 3 midfielders, 2 attackers.
-const human=makePlayer(blueMat,7,"middenvelder");
+const human=makePlayer(blueMat,7);
 human.group.position.set(0,0,FIELD_L/2-22);
+human.team="blue";
+
+// Zeven spelers per ploeg: de menselijke speler plus zes blauwe AI-spelers.
 const teammates=[],opponents=[];
 const blueFormation=[
   {x:-22,z:49,role:"verdediger"},
@@ -259,10 +316,18 @@ const blueFormation=[
   {x:-12,z:-12,role:"aanvaller"},
   {x:12,z:-12,role:"aanvaller"}
 ];
-blueFormation.forEach((f,i)=>{
-  const p=makePlayer(blueMat,i+1,f.role);
-  p.group.position.set(f.x,0,f.z);teammates.push(p);
+
+// De blauwe ploeg bestaat uit de menselijke speler en zes AI-teamgenoten.
+blueFormation.slice(0,6).forEach((f,i)=>{
+  const p=makePlayer(blueMat,i+1);
+  p.group.position.set(f.x,0,f.z);
+  p.role=f.role;
+  p.team="blue";
+  teammates.push(p);
 });
+
+human.role="middenvelder";
+
 const redFormation=[
   {x:-22,z:-49,role:"verdediger"},
   {x:22,z:-49,role:"verdediger"},
@@ -272,26 +337,43 @@ const redFormation=[
   {x:-12,z:12,role:"aanvaller"},
   {x:12,z:12,role:"aanvaller"}
 ];
+
 redFormation.forEach((f,i)=>{
-  const p=makePlayer(redMat,i+1,f.role);
-  p.group.position.set(f.x,0,f.z);opponents.push(p);
+  const p=makePlayer(redMat,i+1);
+  p.group.position.set(f.x,0,f.z);
+  p.role=f.role;
+  p.team="red";
+  opponents.push(p);
 });
+
 const allPlayers=[human,...teammates,...opponents];
 const controllable=[human,...teammates];
-allPlayers.forEach(p=>{p.homeX=p.group.position.x;p.homeZ=p.group.position.z;});
+allPlayers.forEach(p=>{
+  p.homeX=p.group.position.x;
+  p.homeZ=p.group.position.z;
+});
 
 let selected=0,active=human;
 const keys={};
 let charging=false,chargeStart=0,lastShot=0,lastGoal=0;
-let goalPause=0,scoreRed=0,scoreBlue=0,cameraMode="broadcast",toastTimer;
-const STEAL_DISTANCE=3,STEAL_TIME=.3,PLAYER_SPEED=8.2;
+let spaceDownAt=0;
+let goalPause=0;
+let scoreRed=0,scoreBlue=0,cameraMode="broadcast";
+const STEAL_DISTANCE=3.0,STEAL_TIME=.3;
+const PLAYER_SPEED=8.2;
+let toastTimer;
 
 function toast(text){
-  $("toast").textContent=text;$("toast").style.opacity="1";
+  $("toast").textContent=text;
+  $("toast").style.opacity="1";
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>$("toast").style.opacity="0",1500);
 }
-function updateScore(){$("score").textContent=scoreRed+" - "+scoreBlue;}
+
+function updateScore(){
+  $("score").textContent=scoreRed+" - "+scoreBlue;
+}
+
 function celebrate(team){
   $("goal").innerHTML=team+"<br>GOAL!!";
   $("goal").classList.add("show");
@@ -300,61 +382,166 @@ function celebrate(team){
   resetBall();
   setTimeout(()=>$("goal").classList.remove("show"),2200);
 }
+
 function startCharge(){
   if(charging)return;
   if(ballHolder!==active&&active.group.position.distanceTo(ballPos)>2.8){
-    toast("Ga dichter bij de bal staan!");return;
+    toast("Ga dichter bij de bal staan!");
+    return;
   }
-  charging=true;chargeStart=performance.now()/1000;
+  charging=true;
+  chargeStart=performance.now()/1000;
   $("power").style.display="block";
 }
+
 function releaseShot(){
   if(!charging)return;
-  charging=false;$("power").style.display="none";
+  charging=false;
+  $("power").style.display="none";
+
   const elapsed=Math.min(1.2,performance.now()/1000-chargeStart);
   const power=Math.max(.15,elapsed/1.2);
   if(performance.now()/1000-lastShot<.25)return;
   lastShot=performance.now()/1000;
+
   if(ballHolder!==active&&active.group.position.distanceTo(ballPos)>2.8){
-    toast("Je moet de bal hebben om te schieten!");return;
+    toast("Je moet de bal hebben om te schieten!");
+    return;
   }
-  ballHolder=null;stealTarget=null;stealTimer=0;
-  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(active.group.quaternion);
-  forward.y=0;forward.normalize();
+
+  ballHolder=null;
+  stealTarget=null;
+  stealTimer=0;
+
+  const forward=new THREE.Vector3(0,0,-1)
+    .applyQuaternion(active.group.quaternion);
+  forward.y=0;
+  forward.normalize();
+
+  ballPos.copy(active.group.position).addScaledVector(forward,1.3);
+  ballPos.y=R;
   ballVel.addScaledVector(forward,12+power*39);
   ballVel.y+=3+power*13;
   toast("SCHOT "+Math.round(power*100)+"%");
 }
 
-window.addEventListener("keydown",e=>{
-  const k=e.key.toLowerCase();keys[k]=true;
-  if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault();
-  if(k==="e"&&!e.repeat)startCharge();
-  if(k==="c"&&!e.repeat){
-    cameraMode=cameraMode==="broadcast"?"third":"broadcast";
-    $("camera").textContent="CAMERA: "+cameraMode.toUpperCase()+" · C";
+function passToTeammate(){
+  if(!active||matchEnded)return;
+
+  if(ballHolder!==active&&active.group.position.distanceTo(ballPos)>2.8){
+    toast("Je moet dicht bij de bal staan om te passen!");
+    return;
   }
-  if(k==="r"&&!matchEnded)resetBall();
-  if((k==="q"||k===" ")&&!e.repeat){
+
+  let teammate=null,best=Infinity;
+  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(active.group.quaternion);
+  forward.y=0;
+  forward.normalize();
+
+  for(const p of controllable){
+    if(p===active)continue;
+    const offset=p.group.position.clone().sub(active.group.position);
+    const dist=offset.length();
+    if(dist<best&&offset.dot(forward)>-2){
+      best=dist;
+      teammate=p;
+    }
+  }
+
+  if(!teammate){
+    toast("Geen ploegmaat gevonden!");
+    return;
+  }
+
+  ballHolder=null;
+  stealTarget=null;
+  stealTimer=0;
+  ballPos.copy(active.group.position).addScaledVector(forward,1.4);
+  ballPos.y=R;
+
+  const target=teammate.group.position.clone().sub(ballPos);
+  target.y=0;
+  if(target.lengthSq()<.01)target.copy(forward);
+  target.normalize();
+
+  ballVel.copy(target.multiplyScalar(17));
+  ballVel.y=2.2;
+  toast("PASS NAAR PLOEGMAAT!");
+}
+
+function stopAndReturnToMenu(){
+  charging=false;
+  $("power").style.display="none";
+  keys[" "]=false;
+  resetBall();
+  matchEnded=true;
+  $("goal").classList.remove("show");
+  $("play").textContent="START NIEUWE WEDSTRIJD";
+  $("menu").style.display="grid";
+  toast("WEDSTRIJD GESTOPT");
+}
+
+window.addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault();
+  keys[k]=true;
+
+  if(k===" "&&!e.repeat){
+    spaceDownAt=performance.now()/1000;
+    startCharge();
+  }
+
+  if(k==="e"&&!e.repeat){
     selected=(selected+1)%controllable.length;
     active=controllable[selected];
     toast("SPELER "+(selected+1)+" GESELECTEERD");
   }
+
+  if(k==="c"&&!e.repeat){
+    cameraMode=cameraMode==="broadcast"?"third":"broadcast";
+    $("camera").textContent="CAMERA: "+cameraMode.toUpperCase()+" · C";
+  }
+
+  if(k==="r"&&!e.repeat&&$("menu").style.display==="none"){
+    stopAndReturnToMenu();
+  }
 });
+
 window.addEventListener("keyup",e=>{
-  keys[e.key.toLowerCase()]=false;
-  if(e.key.toLowerCase()==="e")releaseShot();
+  const k=e.key.toLowerCase();
+  keys[k]=false;
+
+  if(k===" "){
+    const held=performance.now()/1000-spaceDownAt;
+    if(charging){
+      if(held<.28){
+        charging=false;
+        $("power").style.display="none";
+        passToTeammate();
+      }else{
+        releaseShot();
+      }
+    }
+  }
 });
+
 window.addEventListener("mousedown",e=>{
   if(e.button===0&&$("menu").style.display==="none")startCharge();
 });
-window.addEventListener("mouseup",e=>{if(e.button===0)releaseShot();});
+
+window.addEventListener("mouseup",e=>{
+  if(e.button===0)releaseShot();
+});
+
 window.addEventListener("blur",()=>{
   Object.keys(keys).forEach(k=>keys[k]=false);
   if(charging)releaseShot();
 });
 
-function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function clamp(v,a,b){
+  return Math.max(a,Math.min(b,v));
+}
+
 function movePlayer(p,dir,dt,speed){
   if(dir.lengthSq()>0){
     dir.normalize();
@@ -363,75 +550,95 @@ function movePlayer(p,dir,dt,speed){
     let diff=((target-p.group.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI;
     p.group.rotation.y+=diff*Math.min(1,dt*12);
   }
+
   p.group.position.x=clamp(p.group.position.x,-FIELD_W/2+2,FIELD_W/2-2);
   p.group.position.z=clamp(p.group.position.z,-FIELD_L/2+2,FIELD_L/2-2);
+}
+
+function roleHomePosition(p,team){
+  return new THREE.Vector3(p.homeX??p.group.position.x,0,p.homeZ??p.group.position.z);
 }
 
 function nearestPlayerToBall(players){
   let best=null,bestDist=Infinity;
   for(const p of players){
     const d=Math.hypot(p.group.position.x-ballPos.x,p.group.position.z-ballPos.z);
-    if(d<bestDist){best=p;bestDist=d;}
+    if(d<bestDist){
+      best=p;
+      bestDist=d;
+    }
   }
   return {player:best,distance:bestDist};
 }
+
 function stepAI(dt){
-  const blueNearest=nearestPlayerToBall(teammates);
-  const redNearest=nearestPlayerToBall(opponents);
+  const blueAI=teammates;
+  const redAI=opponents;
+  const blueNearest=nearestPlayerToBall(blueAI);
+  const redNearest=nearestPlayerToBall(redAI);
   const ballZ=ballPos.z;
 
   function runTeam(players,team){
     const ownGoalZ=team==="blue"?FIELD_L/2:-FIELD_L/2;
     const opponentGoalZ=-ownGoalZ;
     const nearest=team==="blue"?blueNearest:redNearest;
-    const ownPossession=ballHolder&&ballHolder.team===team;
-    const opponentPossession=ballHolder&&ballHolder.team!==team;
+    const isOppPossession=ballHolder&&ballHolder.team!==team;
 
-    players.forEach(p=>{
+    players.forEach((p,i)=>{
       if(p===active)return;
 
       if(ballHolder===p){
         const goalX=clamp(-p.group.position.x*.18,-GOAL_W*.32,GOAL_W*.32);
-        const target=new THREE.Vector3(goalX,0,opponentGoalZ+(team==="blue"?10:-10));
+        const target=new THREE.Vector3(
+          goalX,0,opponentGoalZ+(team==="blue"?10:-10)
+        );
         const dir=target.sub(p.group.position);
+
         if(dir.length()>1.2)movePlayer(p,dir,dt,PLAYER_SPEED*.88);
 
         if(Math.abs(p.group.position.z-opponentGoalZ)<23&&
            Math.abs(p.group.position.x)<GOAL_W*.9&&
-           performance.now()/1000-lastShot>1){
+           performance.now()/1000-lastShot>1.0){
           lastShot=performance.now()/1000;
           ballHolder=null;
-          ballPos.set(p.group.position.x,R,p.group.position.z+(team==="blue"?-1.2:1.2));
-          ballVel.set(clamp(-p.group.position.x*.12,-3,3),5.5,team==="blue"?-27:27);
+          ballPos.set(
+            p.group.position.x,R,
+            p.group.position.z+(team==="blue"?-1.2:1.2)
+          );
+          const aimX=clamp(-p.group.position.x*.12,-3,3);
+          ballVel.set(aimX,5.5,team==="blue"?-27:27);
           toast(team==="blue"?"BLUE FC SCHIET OP DOEL!":"RED FC SCHIET OP DOEL!");
         }
         return;
       }
 
-      const home=new THREE.Vector3(p.homeX,0,p.homeZ);
+      const home=roleHomePosition(p,team);
       let target=home.clone();
       const ballInOwnHalf=team==="blue"?ballZ>0:ballZ<0;
-      const dangerNearGoal=Math.abs(ballZ-ownGoalZ)<48;
-      const nearestToLooseBall=nearest.player===p;
+      const ballCloseToOwnGoal=Math.abs(ballZ-ownGoalZ)<48;
+      const canPress=nearest.player===p;
 
       if(p.role==="aanvaller"){
         target.z=opponentGoalZ+(team==="blue"?18:-18);
-        target.x=clamp(ballPos.x+(p.homeX<0?-7:7),-FIELD_W*.32,FIELD_W*.32);
-        if((opponentPossession||!ballHolder)&&nearestToLooseBall&&Math.abs(ballZ-p.group.position.z)<38){
-          target.x=ballPos.x+(p.homeX<0?-2.5:2.5);
+        target.x=clamp(ballPos.x+(i%2===0?-7:7),-FIELD_W*.32,FIELD_W*.32);
+
+        if((isOppPossession||!ballHolder)&&canPress&&Math.abs(ballZ-p.group.position.z)<38){
+          target.x=ballPos.x+(i%2===0?-2.5:2.5);
           target.z=ballPos.z+(team==="blue"?5:-5);
         }
       }else if(p.role==="middenvelder"){
         target.x=clamp(home.x+(ballPos.x-home.x)*.28,-FIELD_W*.38,FIELD_W*.38);
         target.z=home.z+(ballZ-home.z)*.18;
-        if((opponentPossession||!ballHolder)&&nearestToLooseBall&&Math.abs(ballZ-p.group.position.z)<42){
+
+        if((isOppPossession||!ballHolder)&&canPress&&Math.abs(ballZ-p.group.position.z)<42){
           target.x=ballPos.x+(p.group.position.x<ballPos.x?-2.5:2.5);
           target.z=ballPos.z+(team==="blue"?3:-3);
         }
       }else{
         target.x=clamp(home.x+ballPos.x*.12,-FIELD_W*.36,FIELD_W*.36);
         target.z=ownGoalZ+(team==="blue"?-29:29);
-        if(ballInOwnHalf&&dangerNearGoal&&nearestToLooseBall){
+
+        if(ballInOwnHalf&&ballCloseToOwnGoal&&canPress){
           target.x=ballPos.x+(p.group.position.x<ballPos.x?-3:3);
           target.z=ballPos.z+(team==="blue"?7:-7);
         }
@@ -442,28 +649,32 @@ function stepAI(dt){
       const speed=p.role==="aanvaller"?PLAYER_SPEED*.72:PLAYER_SPEED*.58;
       if(distance>1.6)movePlayer(p,dir,dt,speed);
 
-      // Alleen de dichtstbijzijnde AI-speler jaagt actief op een losse bal.
-      if(!ballHolder&&nearestToLooseBall&&p.group.position.distanceTo(ballPos)<1.65&&
+      if(!ballHolder&&canPress&&p.group.position.distanceTo(ballPos)<1.65&&
          ballPos.y<2.1&&ballVel.length()<10){
-        ballHolder=p;ballVel.set(0,0,0);
+        ballHolder=p;
+        ballVel.set(0,0,0);
         toast(team==="blue"?"BLUE FC heeft de bal!":"RED FC heeft de bal!");
       }
     });
   }
-  runTeam(teammates,"blue");
-  runTeam(opponents,"red");
+
+  runTeam(blueAI,"blue");
+  runTeam(redAI,"red");
 }
 
 function stepBall(dt){
   if(ballHolder){
     if(controllable.includes(ballHolder)&&ballHolder!==active){
-      active=ballHolder;selected=controllable.indexOf(ballHolder);
+      active=ballHolder;
+      selected=controllable.indexOf(ballHolder);
       toast("JIJ BENT NU SPELER "+(selected+1));
     }
+
     const forward=new THREE.Vector3(0,0,-1).applyQuaternion(ballHolder.group.quaternion);
     forward.y=0;
     if(forward.lengthSq()<.001)forward.set(0,0,-1);
     forward.normalize();
+
     const holderPos=ballHolder.group.position;
     const desired=holderPos.clone().addScaledVector(forward,1.05);
     desired.y=R;
@@ -478,20 +689,36 @@ function stepBall(dt){
     let challenger=null,challengerDist=Infinity;
     for(const p of challengers){
       const d=p.group.position.distanceTo(holderPos);
-      if(d<challengerDist){challengerDist=d;challenger=p;}
+      if(d<challengerDist){
+        challengerDist=d;
+        challenger=p;
+      }
     }
+
     if(challenger&&challengerDist<STEAL_DISTANCE){
       if(stealTarget===challenger)stealTimer+=dt;
-      else{stealTarget=challenger;stealTimer=0;}
+      else{
+        stealTarget=challenger;
+        stealTimer=0;
+      }
+
       if(stealTimer>=STEAL_TIME){
         ballHolder=challenger;
-        stealTarget=null;stealTimer=0;
+        stealTarget=null;
+        stealTimer=0;
+
         if(controllable.includes(challenger)){
-          active=challenger;selected=controllable.indexOf(challenger);
+          active=challenger;
+          selected=controllable.indexOf(challenger);
           toast("BAL AFGEPAKT! JIJ HEBT DE BAL!");
-        }else toast("TEGENSTANDER PAKT DE BAL AF!");
+        }else{
+          toast("TEGENSTANDER PAKT DE BAL AF!");
+        }
       }
-    }else{stealTarget=null;stealTimer=0;}
+    }else{
+      stealTarget=null;
+      stealTimer=0;
+    }
 
     ballGroup.position.copy(ballPos);
     ballGroup.rotation.x+=.02;
@@ -508,6 +735,7 @@ function stepBall(dt){
     ballVel.z*=Math.pow(.985,dt*60);
     if(Math.abs(ballVel.y)<1.2)ballVel.y=0;
   }
+
   ballVel.x*=Math.pow(.999,dt*60);
   ballVel.z*=Math.pow(.999,dt*60);
 
@@ -517,30 +745,46 @@ function stepBall(dt){
   }
 
   if(Math.abs(ballPos.z)>FIELD_L/2+3.5&&
-     Math.abs(ballPos.x)<GOAL_W/2-.25&&ballPos.y<GOAL_H-.15&&
+     Math.abs(ballPos.x)<GOAL_W/2-.25&&
+     ballPos.y<GOAL_H-.15&&
      performance.now()/1000-lastGoal>2.5){
     lastGoal=performance.now()/1000;
-    if(ballPos.z<0){scoreBlue++;updateScore();celebrate("BLUE");}
-    else{scoreRed++;updateScore();celebrate("RED");}
+
+    if(ballPos.z<0){
+      scoreBlue++;
+      updateScore();
+      celebrate("BLUE");
+    }else{
+      scoreRed++;
+      updateScore();
+      celebrate("RED");
+    }
     setTimeout(resetBall,650);
   }else if(Math.abs(ballPos.z)>FIELD_L/2+7){
     ballPos.z=Math.sign(ballPos.z)*(FIELD_L/2+7);
     ballVel.z*=-.5;
   }
 
+  const humanDist=active.group.position.distanceTo(ballPos);
+  if(humanDist<2.15&&ballPos.y<2.2&&ballVel.length()<12){
+    ballHolder=active;
+    ballVel.set(0,0,0);
+    toast("JIJ HEBT DE BAL!");
+  }
+
   if(!ballHolder){
-    const activeDistance=active.group.position.distanceTo(ballPos);
-    if(activeDistance<2.15&&ballPos.y<2.2&&ballVel.length()<12){
-      ballHolder=active;ballVel.set(0,0,0);toast("JIJ HEBT DE BAL!");
-    }else{
-      // Een AI-speler kan de vrije bal oppakken als die dichtbij genoeg is.
-      for(const p of allPlayers){
-        if(p===active)continue;
-        const distance=p.group.position.distanceTo(ballPos);
-        if(distance<1.5&&ballPos.y<2.1&&ballVel.length()<8){
-          ballHolder=p;ballVel.set(0,0,0);
-          break;
-        }
+    for(const p of allPlayers){
+      const pp=p.group.position;
+      const dx=ballPos.x-pp.x,dz=ballPos.z-pp.z;
+      const dist=Math.hypot(dx,dz);
+
+      if(dist<1.2&&ballPos.y<2.8){
+        const nx=dist>.001?dx/dist:0;
+        const nz=dist>.001?dz/dist:1;
+        ballPos.x=pp.x+nx*1.2;
+        ballPos.z=pp.z+nz*1.2;
+        ballVel.x+=nx*1.1;
+        ballVel.z+=nz*1.1;
       }
     }
   }
@@ -551,13 +795,21 @@ function stepBall(dt){
 }
 
 function updateMatchClock(){
-  const minutes=Math.min(MATCH_MINUTES,Math.floor(matchSeconds/SECONDS_PER_GAME_MINUTE));
-  const seconds=Math.floor((matchSeconds%SECONDS_PER_GAME_MINUTE)/SECONDS_PER_GAME_MINUTE*60);
-  $("matchClock").textContent=String(minutes).padStart(2,"0")+":"+
-    String(seconds).padStart(2,"0")+" / 90:00";
+  const elapsedMinutes=Math.min(
+    MATCH_MINUTES,Math.floor(matchSeconds/SECONDS_PER_GAME_MINUTE)
+  );
+  const mm=String(elapsedMinutes).padStart(2,"0");
+  const ss=String(
+    Math.floor((matchSeconds%SECONDS_PER_GAME_MINUTE)/
+    SECONDS_PER_GAME_MINUTE*60)
+  ).padStart(2,"0");
+
+  $("matchClock").textContent=mm+":"+ss+" / 90:00";
 }
+
 function endMatch(){
-  matchEnded=true;charging=false;
+  matchEnded=true;
+  charging=false;
   $("power").style.display="none";
   $("goal").classList.remove("show");
   $("goal").innerHTML="WEDSTRIJD AFGELOPEN";
@@ -568,21 +820,33 @@ function endMatch(){
 }
 
 let previous=performance.now();
+
 function animate(now){
   requestAnimationFrame(animate);
   const dt=Math.min(.033,(now-previous)/1000);
   previous=now;
-  if(matchEnded){renderer.render(scene,camera);return;}
+
+  if(matchEnded){
+    renderer.render(scene,camera);
+    return;
+  }
 
   if($("menu").style.display==="none"){
-    matchSeconds+=dt;updateMatchClock();
+    matchSeconds+=dt;
+    updateMatchClock();
+
     if(matchSeconds>=MATCH_MINUTES*SECONDS_PER_GAME_MINUTE){
-      endMatch();renderer.render(scene,camera);return;
+      endMatch();
+      renderer.render(scene,camera);
+      return;
     }
   }
+
   if(goalPause>0){
     goalPause=Math.max(0,goalPause-dt);
-    updateMatchClock();renderer.render(scene,camera);return;
+    updateMatchClock();
+    renderer.render(scene,camera);
+    return;
   }
 
   const dir=new THREE.Vector3(
@@ -590,13 +854,16 @@ function animate(now){
     0,
     ((keys.s||keys.arrowdown)?1:0)-((keys.w||keys.arrowup)?1:0)
   );
+
   movePlayer(active,dir,dt,PLAYER_SPEED);
 
   allPlayers.forEach((p,i)=>{
-    const moving=p===active?dir.lengthSq()>.01:false;
+    const moving=p===active?dir.lengthSq()>.01:i<teammates.length+1;
     const swing=moving?Math.sin(now*.012+i)*.45:0;
-    p.legs[0].rotation.x=swing;p.legs[1].rotation.x=-swing;
-    p.arms[0].rotation.x=-swing*.6;p.arms[1].rotation.x=swing*.6;
+    p.legs[0].rotation.x=swing;
+    p.legs[1].rotation.x=-swing;
+    p.arms[0].rotation.x=-swing*.6;
+    p.arms[1].rotation.x=swing*.6;
   });
 
   stepAI(dt);
@@ -611,6 +878,7 @@ function animate(now){
 
   const pp=active.group.position;
   let camPos,look;
+
   if(cameraMode==="broadcast"){
     camPos=new THREE.Vector3(ballPos.x+12,27,ballPos.z+39);
     look=new THREE.Vector3(ballPos.x,0,ballPos.z-4);
@@ -619,6 +887,7 @@ function animate(now){
     camPos=pp.clone().add(new THREE.Vector3(0,8,0)).addScaledVector(forward,15);
     look=pp.clone().add(new THREE.Vector3(0,2,0)).addScaledVector(forward,-4);
   }
+
   const alpha=1-Math.exp(-3.5*dt);
   camera.position.lerp(camPos,alpha);
   camera.lookAt(look);
@@ -627,11 +896,17 @@ function animate(now){
 
 $("play").addEventListener("click",()=>{
   if(matchEnded){
-    scoreRed=0;scoreBlue=0;matchSeconds=0;matchEnded=false;
-    updateScore();updateMatchClock();resetBall();
+    scoreRed=0;
+    scoreBlue=0;
+    matchSeconds=0;
+    matchEnded=false;
+    updateScore();
+    updateMatchClock();
+    resetBall();
     $("goal").classList.remove("show");
     $("play").textContent="START WEDSTRIJD";
   }
+
   $("menu").style.display="none";
   toast("WEDSTRIJD GESTART!");
 });
@@ -643,8 +918,10 @@ window.addEventListener("resize",()=>{
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 });
 
-resetBall();updateMatchClock();
-camera.position.set(12,27,39);camera.lookAt(0,0,0);
+resetBall();
+updateMatchClock();
+camera.position.set(12,27,39);
+camera.lookAt(0,0,0);
 requestAnimationFrame(animate);
 })();
 </script>
