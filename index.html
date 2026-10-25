@@ -31,13 +31,22 @@ h1{font-size:clamp(40px,8vw,70px);line-height:.95;font-style:italic;margin:20px 
 button{pointer-events:auto;cursor:pointer;border:0;border-radius:10px;padding:15px 23px;background:linear-gradient(100deg,#43dfff,#83ffc1);color:#071323;font-weight:900;font-size:14px}
 button:hover{filter:brightness(1.1)}
 #menu button{margin-top:15px}
-@media(max-width:600px){.brand{top:10px;left:10px;font-size:11px}.score{top:48px;font-size:19px;padding:9px 14px}.controls{left:8px;bottom:8px;font-size:10px;padding:9px}}
+@media(max-width:600px){
+ .brand{top:10px;left:10px;font-size:11px}
+ .score{top:48px;font-size:19px;padding:9px 14px}
+ .controls{left:8px;bottom:8px;font-size:10px;padding:9px}
+}
 </style>
 </head>
 <body>
 <div id="hud">
   <div class="brand">WASTAMA <span>FOOTBALL 3D</span></div>
-  <div class="score"><span class="red">RED</span> <span id="score">0 - 0</span> <span class="blue">BLUE</span><div id="matchClock" style="font-size:13px;letter-spacing:1px;margin-top:5px">00:00 / 90:00</div></div>
+  <div class="score">
+    <span class="red">RED</span>
+    <span id="score">0 - 0</span>
+    <span class="blue">BLUE</span>
+    <div id="matchClock" style="font-size:13px;letter-spacing:1px;margin-top:5px">00:00 / 90:00</div>
+  </div>
   <div id="camera">CAMERA: BROADCAST · C</div>
   <div id="toast"></div>
   <div id="goal">GOAL!!</div>
@@ -51,14 +60,17 @@ button:hover{filter:brightness(1.1)}
     <span class="key">R</span> Stoppen en naar beginscherm<br>
     Blijf dichtbij om de bal af te pakken
   </div>
-  <div id="power"><div id="powerText">SCHOTKRACHT 0%</div><div id="track"><div id="fill"></div></div></div>
+  <div id="power">
+    <div id="powerText">SCHOTKRACHT 0%</div>
+    <div id="track"><div id="fill"></div></div>
+  </div>
 </div>
 
 <div id="menu">
   <div class="card">
     <small>WASTAMA STUDIOS PRESENTS</small>
     <h1>FOOTBALL<br><span style="color:#43dfff">3D</span></h1>
-    <p>Een eigen 3D-voetbalgame. Speel samen met je AI-teamgenoten tegen de tegenstander. Scoor, steel de bal en passeer de keeper in een stadion vol supporters.</p>
+    <p>Een eigen 3D-voetbalgame. Speel met een volledig team tegen de AI, steel de bal en scoor in een groot stadion.</p>
     <button id="play">START WEDSTRIJD</button>
   </div>
 </div>
@@ -67,6 +79,7 @@ button:hover{filter:brightness(1.1)}
 <script>
 (() => {
 "use strict";
+
 const $ = id => document.getElementById(id);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x8cc9ef);
@@ -132,8 +145,8 @@ function rectLine(w,d,x,z,y=.06){
 }
 
 const FIELD_W=104, FIELD_L=168;
-const GOAL_W=22, GOAL_H=10;
-const MATCH_MINUTES=90, SECONDS_PER_GAME_MINUTE=5;
+const GOAL_W=16, GOAL_H=7;
+const MATCH_MINUTES=90, SECONDS_PER_GAME_MINUTE=14;
 let matchSeconds=0,matchEnded=false;
 
 box(230,.8,190,material(0x263740),0,-.8,0);
@@ -172,7 +185,7 @@ for(const s of [-1,1]){
   box(.4,GOAL_H,.4,gm,GOAL_W/2,GOAL_H/2,gz);
   box(GOAL_W+.4,.4,.4,gm,0,GOAL_H,gz);
 
-  for(let x=-10;x<=10;x+=2){
+  for(let x=-8;x<=8;x+=2){
     line([[x,0,gz],[x,GOAL_H-.2,gz],[x,GOAL_H-.2,gz-s*4],[x,0,gz-s*4]],0xd8e8f6);
     line([[x,0,gz],[x,0,gz-s*4]],0xd8e8f6);
   }
@@ -191,25 +204,6 @@ for(const side of [-1,1]){
   }
   box(.6,14,1,dark,side*(FIELD_W/2+12),8,0);
   box(17,.8,FIELD_L+32,dark,side*(FIELD_W/2+8),10,0);
-}
-
-// SUPPORTERS OP DE TRIBUNES
-const supporterColors=[0xe53935,0x2196f3,0xffd740,0xffffff,0x43a047,0xff7043,0x9c27b0,0xeeeeee];
-for(const side of [-1,1]){
-  for(let row=0;row<5;row++){
-    for(let i=0;i<55;i++){
-      const z=-FIELD_L/2-8+i*(FIELD_L+16)/54;
-      const x=side*(FIELD_W/2+4+row*2.1);
-      const shirt=material(supporterColors[Math.floor(Math.random()*supporterColors.length)]);
-      const body=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.55,3,6),shirt);
-      body.position.set(x,4+row*1.05,z);
-      body.castShadow=true;
-      scene.add(body);
-      const head=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),skin);
-      head.position.set(x,4.55+row*1.05,z);
-      scene.add(head);
-    }
-  }
 }
 
 for(const x of [-1,1]){
@@ -279,9 +273,7 @@ function makePlayer(teamMat,number){
 
   const legs=[];
   for(const x of [-.25,.25]){
-    const leg=new THREE.Mesh(
-      new THREE.CapsuleGeometry(.15,.65,4,8),dark
-    );
+    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.65,4,8),dark);
     leg.position.set(x,.72,0);
     group.add(leg);
     legs.push(leg);
@@ -293,9 +285,7 @@ function makePlayer(teamMat,number){
 
   const arms=[];
   for(const x of [-.57,.57]){
-    const arm=new THREE.Mesh(
-      new THREE.CapsuleGeometry(.13,.62,4,8),teamMat
-    );
+    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.62,4,8),teamMat);
     arm.position.set(x,2.05,0);
     group.add(arm);
     arms.push(arm);
@@ -313,9 +303,9 @@ function makePlayer(teamMat,number){
 
 const human=makePlayer(blueMat,7);
 human.group.position.set(0,0,FIELD_L/2-22);
-human.role="middenvelder";
 human.team="blue";
 
+// Zeven spelers per ploeg: de menselijke speler plus zes blauwe AI-spelers.
 const teammates=[],opponents=[];
 const blueFormation=[
   {x:-22,z:49,role:"verdediger"},
@@ -323,16 +313,20 @@ const blueFormation=[
   {x:-23,z:20,role:"middenvelder"},
   {x:0,z:27,role:"middenvelder"},
   {x:23,z:20,role:"middenvelder"},
-  {x:-12,z:-12,role:"aanvaller"}
+  {x:-12,z:-12,role:"aanvaller"},
+  {x:12,z:-12,role:"aanvaller"}
 ];
 
-blueFormation.forEach((f,i)=>{
+// De blauwe ploeg bestaat uit de menselijke speler en zes AI-teamgenoten.
+blueFormation.slice(0,6).forEach((f,i)=>{
   const p=makePlayer(blueMat,i+1);
   p.group.position.set(f.x,0,f.z);
   p.role=f.role;
   p.team="blue";
   teammates.push(p);
 });
+
+human.role="middenvelder";
 
 const redFormation=[
   {x:-22,z:-49,role:"verdediger"},
@@ -352,27 +346,8 @@ redFormation.forEach((f,i)=>{
   opponents.push(p);
 });
 
-// KEEPERS: één keeper bij elk doel
-const keeperMat=material(0xffdf45,.45);
-
-const blueKeeper=makePlayer(keeperMat,1);
-blueKeeper.group.position.set(0,0,FIELD_L/2-4);
-blueKeeper.role="keeper";
-blueKeeper.team="blue";
-blueKeeper.homeX=0;
-blueKeeper.homeZ=FIELD_L/2-4;
-
-const redKeeper=makePlayer(keeperMat,1);
-redKeeper.group.position.set(0,0,-FIELD_L/2+4);
-redKeeper.role="keeper";
-redKeeper.team="red";
-redKeeper.homeX=0;
-redKeeper.homeZ=-FIELD_L/2+4;
-
-const keepers=[blueKeeper,redKeeper];
-const allPlayers=[human,...teammates,...opponents,...keepers];
+const allPlayers=[human,...teammates,...opponents];
 const controllable=[human,...teammates];
-
 allPlayers.forEach(p=>{
   p.homeX=p.group.position.x;
   p.homeZ=p.group.position.z;
@@ -381,7 +356,8 @@ allPlayers.forEach(p=>{
 let selected=0,active=human;
 const keys={};
 let charging=false,chargeStart=0,lastShot=0,lastGoal=0;
-let spaceDownAt=0,goalPause=0;
+let spaceDownAt=0;
+let goalPause=0;
 let scoreRed=0,scoreBlue=0,cameraMode="broadcast";
 const STEAL_DISTANCE=3.0,STEAL_TIME=.3;
 const PLAYER_SPEED=8.2;
@@ -580,20 +556,13 @@ function movePlayer(p,dir,dt,speed){
 }
 
 function roleHomePosition(p,team){
-  return new THREE.Vector3(
-    p.homeX??p.group.position.x,
-    0,
-    p.homeZ??p.group.position.z
-  );
+  return new THREE.Vector3(p.homeX??p.group.position.x,0,p.homeZ??p.group.position.z);
 }
 
 function nearestPlayerToBall(players){
   let best=null,bestDist=Infinity;
   for(const p of players){
-    const d=Math.hypot(
-      p.group.position.x-ballPos.x,
-      p.group.position.z-ballPos.z
-    );
+    const d=Math.hypot(p.group.position.x-ballPos.x,p.group.position.z-ballPos.z);
     if(d<bestDist){
       best=p;
       bestDist=d;
@@ -651,26 +620,17 @@ function stepAI(dt){
 
       if(p.role==="aanvaller"){
         target.z=opponentGoalZ+(team==="blue"?18:-18);
-        target.x=clamp(
-          ballPos.x+(i%2===0?-7:7),
-          -FIELD_W*.32,FIELD_W*.32
-        );
+        target.x=clamp(ballPos.x+(i%2===0?-7:7),-FIELD_W*.32,FIELD_W*.32);
 
-        if((isOppPossession||!ballHolder)&&
-           (canPress||Math.abs(ballZ-p.group.position.z)<48)&&
-           Math.abs(ballZ-p.group.position.z)<55){
+        if((isOppPossession||!ballHolder)&&canPress&&Math.abs(ballZ-p.group.position.z)<38){
           target.x=ballPos.x+(i%2===0?-2.5:2.5);
           target.z=ballPos.z+(team==="blue"?5:-5);
         }
       }else if(p.role==="middenvelder"){
-        target.x=clamp(
-          home.x+(ballPos.x-home.x)*.28,
-          -FIELD_W*.38,FIELD_W*.38
-        );
+        target.x=clamp(home.x+(ballPos.x-home.x)*.28,-FIELD_W*.38,FIELD_W*.38);
         target.z=home.z+(ballZ-home.z)*.18;
 
-        if((isOppPossession||!ballHolder)&&canPress&&
-           Math.abs(ballZ-p.group.position.z)<42){
+        if((isOppPossession||!ballHolder)&&canPress&&Math.abs(ballZ-p.group.position.z)<42){
           target.x=ballPos.x+(p.group.position.x<ballPos.x?-2.5:2.5);
           target.z=ballPos.z+(team==="blue"?3:-3);
         }
@@ -689,8 +649,7 @@ function stepAI(dt){
       const speed=p.role==="aanvaller"?PLAYER_SPEED*.72:PLAYER_SPEED*.58;
       if(distance>1.6)movePlayer(p,dir,dt,speed);
 
-      if(!ballHolder&&canPress&&
-         p.group.position.distanceTo(ballPos)<1.65&&
+      if(!ballHolder&&canPress&&p.group.position.distanceTo(ballPos)<1.65&&
          ballPos.y<2.1&&ballVel.length()<10){
         ballHolder=p;
         ballVel.set(0,0,0);
@@ -701,41 +660,6 @@ function stepAI(dt){
 
   runTeam(blueAI,"blue");
   runTeam(redAI,"red");
-
-  // Keepers volgen de bal en proberen schoten tegen te houden.
-  for(const keeper of keepers){
-    const isBlue=keeper.team==="blue";
-    const goalZ=isBlue?FIELD_L/2-4:-FIELD_L/2+4;
-    const ballNearGoal=Math.abs(ballPos.z-goalZ)<35;
-    const targetX=ballNearGoal
-      ?clamp(ballPos.x,-GOAL_W/2+1.5,GOAL_W/2-1.5)
-      :0;
-
-    keeper.group.position.x+=clamp(
-      targetX-keeper.group.position.x,-8*dt,8*dt
-    );
-    keeper.group.position.z+=clamp(
-      goalZ-keeper.group.position.z,-2*dt,2*dt
-    );
-    keeper.group.position.x=clamp(
-      keeper.group.position.x,-GOAL_W/2+1,GOAL_W/2-1
-    );
-
-    const dx=ballPos.x-keeper.group.position.x;
-    const dz=ballPos.z-keeper.group.position.z;
-
-    if(!ballHolder&&Math.hypot(dx,dz)<2.8&&
-       ballPos.y<GOAL_H&&Math.abs(ballPos.z-goalZ)<4.5){
-      ballPos.x=keeper.group.position.x+Math.sign(dx||1)*1.7;
-      ballPos.z=goalZ+(isBlue?-1.8:1.8);
-      ballVel.z=isBlue
-        ?-Math.max(7,Math.abs(ballVel.z)*.8)
-        :Math.max(7,Math.abs(ballVel.z)*.8);
-      ballVel.x+=dx*1.4;
-      ballVel.y=Math.max(ballVel.y,2.5);
-      toast("KEEPER REDT DE BAL!");
-    }
-  }
 }
 
 function stepBall(dt){
@@ -746,8 +670,7 @@ function stepBall(dt){
       toast("JIJ BENT NU SPELER "+(selected+1));
     }
 
-    const forward=new THREE.Vector3(0,0,-1)
-      .applyQuaternion(ballHolder.group.quaternion);
+    const forward=new THREE.Vector3(0,0,-1).applyQuaternion(ballHolder.group.quaternion);
     forward.y=0;
     if(forward.lengthSq()<.001)forward.set(0,0,-1);
     forward.normalize();
@@ -763,16 +686,16 @@ function stepBall(dt){
       ?opponents
       :controllable.filter(p=>p!==ballHolder);
 
-    let challenger=null,bestDistance=Infinity;
+    let challenger=null,challengerDist=Infinity;
     for(const p of challengers){
       const d=p.group.position.distanceTo(holderPos);
-      if(d<bestDistance){
-        bestDistance=d;
+      if(d<challengerDist){
+        challengerDist=d;
         challenger=p;
       }
     }
 
-    if(challenger&&bestDistance<STEAL_DISTANCE){
+    if(challenger&&challengerDist<STEAL_DISTANCE){
       if(stealTarget===challenger)stealTimer+=dt;
       else{
         stealTarget=challenger;
@@ -852,8 +775,7 @@ function stepBall(dt){
   if(!ballHolder){
     for(const p of allPlayers){
       const pp=p.group.position;
-      const dx=ballPos.x-pp.x;
-      const dz=ballPos.z-pp.z;
+      const dx=ballPos.x-pp.x,dz=ballPos.z-pp.z;
       const dist=Math.hypot(dx,dz);
 
       if(dist<1.2&&ballPos.y<2.8){
@@ -878,10 +800,8 @@ function updateMatchClock(){
   );
   const mm=String(elapsedMinutes).padStart(2,"0");
   const ss=String(
-    Math.floor(
-      (matchSeconds%SECONDS_PER_GAME_MINUTE)/
-      SECONDS_PER_GAME_MINUTE*60
-    )
+    Math.floor((matchSeconds%SECONDS_PER_GAME_MINUTE)/
+    SECONDS_PER_GAME_MINUTE*60)
   ).padStart(2,"0");
 
   $("matchClock").textContent=mm+":"+ss+" / 90:00";
@@ -963,12 +883,9 @@ function animate(now){
     camPos=new THREE.Vector3(ballPos.x+12,27,ballPos.z+39);
     look=new THREE.Vector3(ballPos.x,0,ballPos.z-4);
   }else{
-    const forward=new THREE.Vector3(0,0,1)
-      .applyQuaternion(active.group.quaternion);
-    camPos=pp.clone().add(new THREE.Vector3(0,8,0))
-      .addScaledVector(forward,15);
-    look=pp.clone().add(new THREE.Vector3(0,2,0))
-      .addScaledVector(forward,-4);
+    const forward=new THREE.Vector3(0,0,1).applyQuaternion(active.group.quaternion);
+    camPos=pp.clone().add(new THREE.Vector3(0,8,0)).addScaledVector(forward,15);
+    look=pp.clone().add(new THREE.Vector3(0,2,0)).addScaledVector(forward,-4);
   }
 
   const alpha=1-Math.exp(-3.5*dt);
