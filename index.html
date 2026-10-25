@@ -4,76 +4,117 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WASTAMA FOOTBALL 3D</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;overflow:hidden;background:#071323;color:white;font-family:Arial,sans-serif}
 canvas{display:block}
-#hud{position:fixed;inset:0;pointer-events:none}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:2}
 .brand{position:absolute;top:18px;left:20px;font-weight:900;letter-spacing:2px}
 .brand span{color:#43dfff}
-.score{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:#071629ef;border:1px solid #ffffff35;border-radius:12px;padding:12px 24px;font-size:25px;font-weight:900;white-space:nowrap}
+.score{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#071629ed;border:1px solid #ffffff35;border-radius:12px;padding:10px 23px;font-size:24px;font-weight:900;text-align:center;white-space:nowrap}
 .red{color:#ff505b}.blue{color:#45d5ff}
-#camera{position:absolute;right:18px;top:20px;background:#071629ef;border:1px solid #ffffff30;border-radius:9px;padding:10px;font-size:12px}
-.controls{position:absolute;bottom:20px;left:20px;background:#071629ef;border:1px solid #ffffff30;border-radius:12px;padding:14px;line-height:1.8;font-size:13px}
+#camera{position:absolute;right:18px;top:18px;background:#071629ed;border:1px solid #ffffff30;border-radius:9px;padding:10px;font-size:12px}
+.controls{position:absolute;bottom:18px;left:18px;background:#071629ed;border:1px solid #ffffff30;border-radius:12px;padding:12px;line-height:1.75;font-size:12px}
 .key{background:#263a50;padding:3px 6px;border-radius:4px;font-weight:bold}
-#power{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(330px,80vw);text-align:center;display:none}
-#powerText{font-weight:bold;font-size:13px;margin-bottom:8px}
-#track{height:17px;border:1px solid white;background:#071629;border-radius:20px;overflow:hidden}
+#power{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);width:min(300px,60vw);text-align:center;display:none}
+#powerText{font-weight:bold;font-size:12px;margin-bottom:7px}
+#track{height:15px;border:1px solid white;background:#071629;border-radius:20px;overflow:hidden}
 #fill{height:100%;width:0;background:linear-gradient(90deg,#32dfff,#75ff9b,#ffe052,#ff4141)}
-#goal{position:absolute;top:36%;left:50%;transform:translate(-50%,-50%) scale(.7);opacity:0;font-size:clamp(50px,11vw,110px);font-weight:1000;font-style:italic;text-shadow:0 5px #e22,0 12px 30px #000;transition:.25s;text-align:center}
-#goal.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-#toast{position:absolute;top:100px;left:50%;transform:translateX(-50%);background:#071629ef;padding:10px 15px;border-radius:9px;opacity:0;transition:opacity .2s}
-#menu{position:fixed;inset:0;z-index:3;display:grid;place-items:center;background:radial-gradient(ellipse,#153b5b,#030811 80%)}
-.card{width:min(520px,92vw);padding:35px;border:1px solid #ffffff35;border-radius:22px;background:#08182bf2;text-align:center;box-shadow:0 25px 90px #000b}
+#goalMessage{position:absolute;top:32%;left:50%;transform:translate(-50%,-50%) scale(.8);opacity:0;font-size:clamp(45px,9vw,100px);font-weight:1000;font-style:italic;text-shadow:0 5px #e22,0 12px 30px #000;transition:.25s;text-align:center}
+#goalMessage.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#toast{position:absolute;top:90px;left:50%;transform:translateX(-50%);background:#071629ed;padding:10px 15px;border-radius:9px;opacity:0;transition:opacity .2s;text-align:center}
+#mapPanel{position:absolute;right:14px;bottom:14px;width:210px;padding:9px;background:#071629ed;border:1px solid #ffffff55;border-radius:12px}
+#mapTitle{font-size:11px;font-weight:900;letter-spacing:1.5px;text-align:center;margin-bottom:6px}
+#minimap{width:100%;height:225px;display:block;border-radius:5px;background:#176c3a}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px;font-size:10px;color:#e6f1ff}
+.legend span{display:flex;align-items:center;gap:5px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0}
+#menu{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:radial-gradient(ellipse,#153b5b,#030811 80%)}
+.card{width:min(520px,92vw);padding:32px;border:1px solid #ffffff35;border-radius:22px;background:#08182bf2;text-align:center;box-shadow:0 25px 90px #000b}
 .card small{letter-spacing:4px;color:#43dfff;font-weight:bold}
 h1{font-size:clamp(40px,8vw,70px);line-height:.95;font-style:italic;margin:20px 0}
 .card p{color:#b7c9dd;line-height:1.6}
 button{pointer-events:auto;cursor:pointer;border:0;border-radius:10px;padding:15px 23px;background:linear-gradient(100deg,#43dfff,#83ffc1);color:#071323;font-weight:900;font-size:14px}
 button:hover{filter:brightness(1.1)}
-#menu button{margin-top:15px}
-@media(max-width:600px){.brand{top:10px;left:10px;font-size:11px}.score{top:48px;font-size:19px;padding:9px 14px}.controls{left:8px;bottom:8px;font-size:10px;padding:9px}}
+@media(max-width:700px){
+ .brand{top:8px;left:8px;font-size:10px}
+ .score{top:38px;font-size:18px;padding:8px 12px}
+ .controls{left:7px;bottom:7px;font-size:9px;padding:7px;max-width:60%}
+ #mapPanel{right:7px;bottom:7px;width:145px;padding:5px}
+ #minimap{height:160px}
+ #mapTitle{font-size:9px}
+ .legend{font-size:8px}
+ #camera{right:7px;top:8px;font-size:9px;padding:6px}
+}
 </style>
 </head>
+
 <body>
 <div id="hud">
   <div class="brand">WASTAMA <span>FOOTBALL 3D</span></div>
-  <div class="score"><span class="red">RED</span> <span id="score">0 - 0</span> <span class="blue">BLUE</span><div id="matchClock" style="font-size:13px;letter-spacing:1px;margin-top:5px">00:00 / 90:00</div></div>
+
+  <div class="score">
+    <span class="red">RED</span>
+    <span id="score">0 - 0</span>
+    <span class="blue">BLUE</span>
+    <div id="matchClock" style="font-size:12px;letter-spacing:1px;margin-top:5px">00:00 / 90:00</div>
+  </div>
+
   <div id="camera">CAMERA: BROADCAST · C</div>
   <div id="toast"></div>
-  <div id="goal">GOAL!!</div>
+  <div id="goalMessage">GOAL!!</div>
+
   <div class="controls">
     <b>BESTURING</b><br>
     <span class="key">W A S D</span> / <span class="key">↑ ↓ ← →</span> Bewegen<br>
-    <span class="key">SPATIE</span> Vasthouden = schieten · kort tikken = passen<br>
-    <span class="key">MUIS</span> Vasthouden = schieten<br>
+    <span class="key">SPATIE</span> Kort tikken = passen<br>
+    <span class="key">SPATIE</span> Vasthouden = schieten<br>
+    <span class="key">MUIS</span> Ingedrukt houden = schieten<br>
+    <span class="key">E</span> Andere blauwe speler<br>
     <span class="key">C</span> Camera wisselen<br>
-    <span class="key">E</span> Andere speler kiezen<br>
-    <span class="key">R</span> Stoppen en naar beginscherm<br>
-    Blijf dichtbij om de bal af te pakken
+    <span class="key">R</span> Stoppen en naar menu
   </div>
-  <div id="power"><div id="powerText">SCHOTKRACHT 0%</div><div id="track"><div id="fill"></div></div></div>
+
+  <div id="power">
+    <div id="powerText">SCHOTKRACHT 0%</div>
+    <div id="track"><div id="fill"></div></div>
+  </div>
+
+  <div id="mapPanel">
+    <div id="mapTitle">WEDSTRIJD-MINIMAP</div>
+    <canvas id="minimap" width="210" height="225"></canvas>
+    <div class="legend">
+      <span><i class="dot" style="background:#26b9ed"></i>Blauw team</span>
+      <span><i class="dot" style="background:#f13f4e"></i>Rood team</span>
+      <span><i class="dot" style="background:#ffdf45"></i>Keepers</span>
+      <span><i class="dot" style="background:white"></i>Bal</span>
+      <span><i class="dot" style="background:#83ffc1;border:2px solid white"></i>Jij</span>
+    </div>
+  </div>
 </div>
 
 <div id="menu">
   <div class="card">
     <small>WASTAMA STUDIOS PRESENTS</small>
     <h1>FOOTBALL<br><span style="color:#43dfff">3D</span></h1>
-    <p>Een eigen 3D-voetbalgame. Speel samen met je AI-teamgenoten tegen de tegenstander. Scoor, steel de bal en passeer de keeper in een stadion vol supporters.</p>
+    <p>Speel in een 3D-stadion met supporters. Jij bestuurt één blauwe speler terwijl beide teams zelfstandig bewegen, de bal proberen af te pakken en doelpunten proberen te maken.</p>
     <button id="play">START WEDSTRIJD</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-(() => {
+(()=>{
 "use strict";
-const $ = id => document.getElementById(id);
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x8cc9ef);
-scene.fog = new THREE.Fog(0x8cc9ef,100,230);
 
-const camera = new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8cc9ef);
+scene.fog=new THREE.Fog(0x8cc9ef,130,270);
+
+const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,600);
+const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;
@@ -82,67 +123,80 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight(0xe5f5ff,0x34502d,2));
+
 const sun=new THREE.DirectionalLight(0xffffff,2.5);
 sun.position.set(-35,65,30);
 sun.castShadow=true;
 sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left=-80;
-sun.shadow.camera.right=80;
-sun.shadow.camera.top=80;
-sun.shadow.camera.bottom=-80;
+sun.shadow.camera.left=-100;
+sun.shadow.camera.right=100;
+sun.shadow.camera.top=100;
+sun.shadow.camera.bottom=-100;
 scene.add(sun);
 
-const material=(color,roughness=.8,metalness=0)=>
+const mat=(color,roughness=.8,metalness=0)=>
   new THREE.MeshStandardMaterial({color,roughness,metalness});
 
-const grass=material(0x197d42);
-const stripeA=material(0x258b4c);
-const stripeB=material(0x197d42);
-const white=material(0xffffff);
-const dark=material(0x172332);
-const redMat=material(0xf13f4e,.45);
-const blueMat=material(0x26b9ed,.45);
-const skin=material(0xdba77c);
-const black=material(0x11151c);
+const grass=mat(0x197d42);
+const stripeA=mat(0x258b4c);
+const stripeB=mat(0x197d42);
+const white=mat(0xffffff);
+const dark=mat(0x172332);
+const redMat=mat(0xf13f4e,.45);
+const blueMat=mat(0x26b9ed,.45);
+const keeperMat=mat(0xffdf45,.5);
+const skin=mat(0xdba77c);
+const black=mat(0x11151c);
 
-function box(w,h,d,mat,x,y,z,parent=scene){
-  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-  mesh.position.set(x,y,z);
-  mesh.castShadow=true;
-  mesh.receiveShadow=true;
-  parent.add(mesh);
-  return mesh;
+function box(w,h,d,m,x,y,z,parent=scene){
+  const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  o.position.set(x,y,z);
+  o.castShadow=true;
+  o.receiveShadow=true;
+  parent.add(o);
+  return o;
 }
 
 function line(points,color=0xffffff){
-  const geometry=new THREE.BufferGeometry().setFromPoints(
+  const g=new THREE.BufferGeometry().setFromPoints(
     points.map(p=>new THREE.Vector3(p[0],p[1],p[2]))
   );
-  const object=new THREE.Line(geometry,new THREE.LineBasicMaterial({color}));
-  scene.add(object);
-  return object;
+  const o=new THREE.Line(g,new THREE.LineBasicMaterial({color}));
+  scene.add(o);
+  return o;
 }
 
 function rectLine(w,d,x,z,y=.06){
-  return line([
+  line([
     [x-w/2,y,z-d/2],[x+w/2,y,z-d/2],
     [x+w/2,y,z+d/2],[x-w/2,y,z+d/2],
     [x-w/2,y,z-d/2]
   ]);
 }
 
-const FIELD_W=104, FIELD_L=168;
-const GOAL_W=22, GOAL_H=10;
-const MATCH_MINUTES=90, SECONDS_PER_GAME_MINUTE=5;
-let matchSeconds=0,matchEnded=false;
+const FIELD_W=104;
+const FIELD_L=168;
+const GOAL_W=22;
+const GOAL_H=10;
+const MATCH_MINUTES=90;
+const SECONDS_PER_GAME_MINUTE=5;
 
-box(230,.8,190,material(0x263740),0,-.8,0);
+let matchSeconds=0;
+let matchEnded=false;
+let scoreRed=0;
+let scoreBlue=0;
+let goalPause=0;
+let lastGoal=0;
+let toastTimer;
+
+box(250,.8,215,mat(0x263740),0,-.8,0);
 box(FIELD_W,.3,FIELD_L,grass,0,-.15,0);
 
 for(let i=0;i<12;i++){
   box(FIELD_W,.015,FIELD_L/12,i%2?stripeA:stripeB,
     0,.012,-FIELD_L/2+FIELD_L/24+i*FIELD_L/12);
 }
+
 rectLine(FIELD_W,FIELD_L,0,0);
 box(FIELD_W,.025,.12,white,0,.045,0);
 
@@ -156,10 +210,10 @@ function circleLine(radius){
 }
 circleLine(9.15);
 
-const centerFill=new THREE.Mesh(new THREE.CircleGeometry(8.95,64),grass);
-centerFill.rotation.x=-Math.PI/2;
-centerFill.position.y=.045;
-scene.add(centerFill);
+const centerSpot=new THREE.Mesh(new THREE.CircleGeometry(8.95,64),grass);
+centerSpot.rotation.x=-Math.PI/2;
+centerSpot.position.y=.045;
+scene.add(centerSpot);
 circleLine(9.15);
 
 for(const s of [-1,1]){
@@ -167,100 +221,155 @@ for(const s of [-1,1]){
   rectLine(28,9,0,s*(FIELD_L/2-6));
 
   const gz=s*(FIELD_L/2+2);
-  const gm=material(0xf4f7ff,.4,.15);
+  const gm=mat(0xf4f7ff,.4,.15);
+
   box(.4,GOAL_H,.4,gm,-GOAL_W/2,GOAL_H/2,gz);
   box(.4,GOAL_H,.4,gm,GOAL_W/2,GOAL_H/2,gz);
   box(GOAL_W+.4,.4,.4,gm,0,GOAL_H,gz);
 
   for(let x=-10;x<=10;x+=2){
-    line([[x,0,gz],[x,GOAL_H-.2,gz],[x,GOAL_H-.2,gz-s*4],[x,0,gz-s*4]],0xd8e8f6);
-    line([[x,0,gz],[x,0,gz-s*4]],0xd8e8f6);
+    line([[x,0,gz],[x,GOAL_H-.2,gz],[x,GOAL_H-.2,gz-s*5],[x,0,gz-s*5]],0xd8e8f6);
+    line([[x,0,gz],[x,0,gz-s*5]],0xd8e8f6);
   }
-  for(let y=0;y<=6;y+=1.5){
+
+  for(let y=0;y<=GOAL_H;y+=2){
     line([[-GOAL_W/2,y,gz],[GOAL_W/2,y,gz]],0xd8e8f6);
-    line([[-GOAL_W/2,y,gz-s*4],[GOAL_W/2,y,gz-s*4]],0xd8e8f6);
+    line([[-GOAL_W/2,y,gz-s*5],[GOAL_W/2,y,gz-s*5]],0xd8e8f6);
   }
 }
 
+// STADION EN TRIBUNES
 for(const side of [-1,1]){
-  box(12,3,FIELD_L+24,dark,side*(FIELD_W/2+7),1.2,0);
+  box(13,3,FIELD_L+24,dark,side*(FIELD_W/2+8),1.2,0);
+
   for(let r=0;r<5;r++){
-    const seats=[0x34465b,0x43566b,0x2d3d51,0x53647a];
-    box(12,1,FIELD_L+24,material(seats[r%seats.length]),
-      side*(FIELD_W/2+2+r*2.1),3+r*1.05,0);
+    const seatColors=[0x34465b,0x43566b,0x2d3d51,0x53647a];
+    box(12,1,FIELD_L+24,mat(seatColors[r%seatColors.length]),
+      side*(FIELD_W/2+3+r*2.1),3+r*1.05,0);
   }
-  box(.6,14,1,dark,side*(FIELD_W/2+12),8,0);
-  box(17,.8,FIELD_L+32,dark,side*(FIELD_W/2+8),10,0);
+
+  box(.6,14,1,dark,side*(FIELD_W/2+16),8,0);
+  box(17,.8,FIELD_L+32,dark,side*(FIELD_W/2+12),10,0);
 }
 
-// SUPPORTERS OP DE TRIBUNES
-const supporterColors=[0xe53935,0x2196f3,0xffd740,0xffffff,0x43a047,0xff7043,0x9c27b0,0xeeeeee];
+// SUPPORTERS: grote, zichtbare gekleurde figuurtjes op de tribunes.
+const fanColors=[
+  0xe53935,0x2196f3,0xffd740,0xffffff,
+  0x43a047,0xff7043,0x9c27b0,0xeeeeee
+];
+
+function addFan(x,y,z,color){
+  const shirt=mat(color,.9);
+  const body=new THREE.Mesh(
+    new THREE.CapsuleGeometry(.32,.65,3,7),shirt
+  );
+  body.position.set(x,y,z);
+  body.castShadow=true;
+  scene.add(body);
+
+  const head=new THREE.Mesh(
+    new THREE.SphereGeometry(.25,10,8),skin
+  );
+  head.position.set(x,y+.58,z);
+  head.castShadow=true;
+  scene.add(head);
+
+  // Opgeheven armen maken supporters herkenbaarder.
+  for(const side of [-1,1]){
+    const arm=new THREE.Mesh(
+      new THREE.CapsuleGeometry(.09,.48,3,6),shirt
+    );
+    arm.position.set(x+side*.38,y+.22,z);
+    arm.rotation.z=side*.55;
+    scene.add(arm);
+  }
+}
+
+// Langs de lange zijtribunes.
 for(const side of [-1,1]){
   for(let row=0;row<5;row++){
-    for(let i=0;i<55;i++){
-      const z=-FIELD_L/2-8+i*(FIELD_L+16)/54;
-      const x=side*(FIELD_W/2+4+row*2.1);
-      const shirt=material(supporterColors[Math.floor(Math.random()*supporterColors.length)]);
-      const body=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.55,3,6),shirt);
-      body.position.set(x,4+row*1.05,z);
-      body.castShadow=true;
-      scene.add(body);
-      const head=new THREE.Mesh(new THREE.SphereGeometry(.22,8,6),skin);
-      head.position.set(x,4.55+row*1.05,z);
-      scene.add(head);
+    for(let i=0;i<65;i++){
+      const z=-FIELD_L/2-8+i*(FIELD_L+16)/64;
+      const x=side*(FIELD_W/2+3+row*2.05);
+      const y=4.2+row*1.05;
+      const color=fanColors[Math.floor(Math.random()*fanColors.length)];
+      addFan(x,y,z,color);
     }
   }
 }
 
+// Extra supporters achter de doelen.
+for(const end of [-1,1]){
+  for(let row=0;row<3;row++){
+    for(let i=0;i<37;i++){
+      const x=-FIELD_W/2+i*FIELD_W/36;
+      const z=end*(FIELD_L/2+10+row*2.2);
+      const y=3.8+row*1.05;
+      addFan(x,y,z,fanColors[Math.floor(Math.random()*fanColors.length)]);
+    }
+  }
+}
+
+// Stadionlampen.
 for(const x of [-1,1]){
   for(const z of [-1,1]){
-    box(.5,23,.5,dark,x*(FIELD_W/2+15),11.5,z*(FIELD_L/2-10));
-    box(5,.4,.7,white,x*(FIELD_W/2+15),23,z*(FIELD_L/2-10));
+    box(.5,23,.5,dark,x*(FIELD_W/2+19),11.5,z*(FIELD_L/2-10));
+    box(5,.4,.7,white,x*(FIELD_W/2+19),23,z*(FIELD_L/2-10));
     const light=new THREE.PointLight(0xd8efff,30,60);
-    light.position.set(x*(FIELD_W/2+15),21,z*(FIELD_L/2-10));
+    light.position.set(x*(FIELD_W/2+19),21,z*(FIELD_L/2-10));
     scene.add(light);
   }
 }
 
+// BAL
 const ballGroup=new THREE.Group();
 scene.add(ballGroup);
+
 const ball=new THREE.Mesh(
-  new THREE.SphereGeometry(.72,32,24),
-  material(0xfafafa,.35)
+  new THREE.SphereGeometry(.72,24,20),
+  mat(0xfafafa,.35)
 );
 ball.castShadow=true;
 ball.receiveShadow=true;
 ballGroup.add(ball);
 
-const patchMat=material(0x151922,.55);
+const patchMat=mat(0x151922,.55);
 for(let i=0;i<5;i++){
   const patch=new THREE.Mesh(new THREE.CircleGeometry(.22,5),patchMat);
   patch.position.set(Math.cos(i*1.256)*.48,Math.sin(i*1.256)*.48,.48);
-  patch.lookAt(patch.position.clone().multiplyScalar(2).add(
-    new THREE.Vector3(0,0,1)
-  ));
   ballGroup.add(patch);
 }
 
-const R=.72,gravity=25;
+const R=.72;
+const gravity=25;
 const ballPos=new THREE.Vector3(0,R,0);
 const ballVel=new THREE.Vector3();
+
 let ballHolder=null;
-let stealTarget=null,stealTimer=0,loseTarget=null,loseTimer=0;
+let stealTarget=null;
+let stealTimer=0;
+let charging=false;
+let chargeStart=0;
+let lastShot=0;
+let spaceDownAt=0;
+let cameraMode="broadcast";
+
+const STEAL_DISTANCE=3.2;
+const STEAL_TIME=.3;
+const PLAYER_SPEED=8.2;
 
 function resetBall(){
   ballHolder=null;
   stealTarget=null;
   stealTimer=0;
-  loseTarget=null;
-  loseTimer=0;
   ballPos.set(0,R,0);
   ballVel.set(0,0,0);
   ballGroup.position.copy(ballPos);
 }
 
-function makePlayer(teamMat,number){
+function makePlayer(teamMat,number,team,role){
   const group=new THREE.Group();
+
   const torso=new THREE.Mesh(
     new THREE.CapsuleGeometry(.48,.85,5,10),teamMat
   );
@@ -278,6 +387,8 @@ function makePlayer(teamMat,number){
   group.add(shorts);
 
   const legs=[];
+  const arms=[];
+
   for(const x of [-.25,.25]){
     const leg=new THREE.Mesh(
       new THREE.CapsuleGeometry(.15,.65,4,8),dark
@@ -291,7 +402,6 @@ function makePlayer(teamMat,number){
     group.add(shoe);
   }
 
-  const arms=[];
   for(const x of [-.57,.57]){
     const arm=new THREE.Mesh(
       new THREE.CapsuleGeometry(.13,.62,4,8),teamMat
@@ -303,92 +413,112 @@ function makePlayer(teamMat,number){
 
   const badge=new THREE.Mesh(
     new THREE.CircleGeometry(.13,12),
-    material(number%2?0xffe45b:0xffffff)
+    mat(number%2?0xffe45b:0xffffff)
   );
   badge.position.set(0,2.25,-.49);
   group.add(badge);
+
   scene.add(group);
-  return {group,legs,arms};
+
+  return {
+    group,legs,arms,team,role,number,
+    homeX:0,homeZ:0,
+    isKeeper:role==="keeper"
+  };
 }
 
-const human=makePlayer(blueMat,7);
-human.group.position.set(0,0,FIELD_L/2-22);
-human.role="middenvelder";
-human.team="blue";
+// ZEVEN SPELERS PER TEAM, KEEPERS INBEGREPEN.
+// Jij bestuurt één blauwe speler; alle andere spelers hebben AI.
+const bluePlayers=[];
+const redPlayers=[];
 
-const teammates=[],opponents=[];
 const blueFormation=[
-  {x:-22,z:49,role:"verdediger"},
-  {x:22,z:49,role:"verdediger"},
-  {x:-23,z:20,role:"middenvelder"},
-  {x:0,z:27,role:"middenvelder"},
-  {x:23,z:20,role:"middenvelder"},
-  {x:-12,z:-12,role:"aanvaller"}
+  {x:0,z:62,role:"speler"},
+  {x:-30,z:45,role:"verdediger"},
+  {x:30,z:45,role:"verdediger"},
+  {x:-24,z:17,role:"middenvelder"},
+  {x:8,z:24,role:"middenvelder"},
+  {x:25,z:-5,role:"aanvaller"},
+  {x:-10,z:-18,role:"aanvaller"}
+];
+
+const redFormation=[
+  {x:0,z:-62,role:"speler"},
+  {x:-30,z:-45,role:"verdediger"},
+  {x:30,z:-45,role:"verdediger"},
+  {x:-24,z:-17,role:"middenvelder"},
+  {x:8,z:-24,role:"middenvelder"},
+  {x:25,z:5,role:"aanvaller"},
+  {x:-10,z:18,role:"aanvaller"}
 ];
 
 blueFormation.forEach((f,i)=>{
-  const p=makePlayer(blueMat,i+1);
+  const p=makePlayer(blueMat,i+1,"blue",f.role);
   p.group.position.set(f.x,0,f.z);
-  p.role=f.role;
-  p.team="blue";
-  teammates.push(p);
+  p.homeX=f.x;
+  p.homeZ=f.z;
+  bluePlayers.push(p);
 });
-
-const redFormation=[
-  {x:-22,z:-49,role:"verdediger"},
-  {x:22,z:-49,role:"verdediger"},
-  {x:-23,z:-20,role:"middenvelder"},
-  {x:0,z:-27,role:"middenvelder"},
-  {x:23,z:-20,role:"middenvelder"},
-  {x:-12,z:12,role:"aanvaller"},
-  {x:12,z:12,role:"aanvaller"}
-];
 
 redFormation.forEach((f,i)=>{
-  const p=makePlayer(redMat,i+1);
+  const p=makePlayer(redMat,i+1,"red",f.role);
   p.group.position.set(f.x,0,f.z);
-  p.role=f.role;
-  p.team="red";
-  opponents.push(p);
+  p.homeX=f.x;
+  p.homeZ=f.z;
+  redPlayers.push(p);
 });
 
-// KEEPERS: één keeper bij elk doel
-const keeperMat=material(0xffdf45,.45);
+// De eerste blauwe speler is vanaf de start jouw speler.
+let selected=0;
+let active=bluePlayers[selected];
+active.isUser=true;
 
-const blueKeeper=makePlayer(keeperMat,1);
-blueKeeper.group.position.set(0,0,FIELD_L/2-4);
+const allPlayers=[...bluePlayers,...redPlayers];
+const keepers=[];
+
+// Keepers vervangen de achterste spelers in de rolverdeling,
+// zodat elk team zeven spelers inclusief keeper heeft.
+function makeKeeper(team){
+  const keeper=makePlayer(
+    keeperMat,1,team,"keeper"
+  );
+  keeper.group.position.set(0,0,team==="blue"?FIELD_L/2-5:-FIELD_L/2+5);
+  keeper.homeX=0;
+  keeper.homeZ=keeper.group.position.z;
+  keeper.isKeeper=true;
+  return keeper;
+}
+
+// Maak de keeper een van de zeven spelers per ploeg.
+const blueKeeper=bluePlayers[0];
 blueKeeper.role="keeper";
-blueKeeper.team="blue";
+blueKeeper.isKeeper=true;
 blueKeeper.homeX=0;
-blueKeeper.homeZ=FIELD_L/2-4;
+blueKeeper.homeZ=FIELD_L/2-5;
+blueKeeper.group.position.set(0,0,blueKeeper.homeZ);
 
-const redKeeper=makePlayer(keeperMat,1);
-redKeeper.group.position.set(0,0,-FIELD_L/2+4);
+const redKeeper=redPlayers[0];
 redKeeper.role="keeper";
-redKeeper.team="red";
+redKeeper.isKeeper=true;
 redKeeper.homeX=0;
-redKeeper.homeZ=-FIELD_L/2+4;
+redKeeper.homeZ=-FIELD_L/2+5;
+redKeeper.group.position.set(0,0,redKeeper.homeZ);
 
-const keepers=[blueKeeper,redKeeper];
-const allPlayers=[human,...teammates,...opponents,...keepers];
-const controllable=[human,...teammates];
+keepers.push(blueKeeper,redKeeper);
 
-allPlayers.forEach(p=>{
-  p.homeX=p.group.position.x;
-  p.homeZ=p.group.position.z;
-});
+// Selecteer automatisch een blauwe veldspeler als jouw eerste speler.
+function chooseStartingPlayer(){
+  selected=4;
+  active=bluePlayers[selected];
+  bluePlayers.forEach(p=>p.isUser=false);
+  active.isUser=true;
+}
+chooseStartingPlayer();
 
-let selected=0,active=human;
 const keys={};
-let charging=false,chargeStart=0,lastShot=0,lastGoal=0;
-let spaceDownAt=0,goalPause=0;
-let scoreRed=0,scoreBlue=0,cameraMode="broadcast";
-const STEAL_DISTANCE=3.0,STEAL_TIME=.3;
-const PLAYER_SPEED=8.2;
-let toastTimer;
 
-function toast(text){
-  $("toast").textContent=text;
+function toast(message){
+  $("toast").textContent=message;
   $("toast").style.opacity="1";
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>$("toast").style.opacity="0",1500);
@@ -398,13 +528,17 @@ function updateScore(){
   $("score").textContent=scoreRed+" - "+scoreBlue;
 }
 
+function clamp(v,a,b){
+  return Math.max(a,Math.min(b,v));
+}
+
 function celebrate(team){
-  $("goal").innerHTML=team+"<br>GOAL!!";
-  $("goal").classList.add("show");
+  $("goalMessage").innerHTML=team+"<br>GOAL!!";
+  $("goalMessage").classList.add("show");
   toast(team+" SCOORT!");
   goalPause=2.2;
   resetBall();
-  setTimeout(()=>$("goal").classList.remove("show"),2200);
+  setTimeout(()=>$("goalMessage").classList.remove("show"),2200);
 }
 
 function startCharge(){
@@ -425,11 +559,12 @@ function releaseShot(){
 
   const elapsed=Math.min(1.2,performance.now()/1000-chargeStart);
   const power=Math.max(.15,elapsed/1.2);
+
   if(performance.now()/1000-lastShot<.25)return;
   lastShot=performance.now()/1000;
 
   if(ballHolder!==active&&active.group.position.distanceTo(ballPos)>2.8){
-    toast("Je moet de bal hebben om te schieten!");
+    toast("Je moet dicht bij de bal staan!");
     return;
   }
 
@@ -453,39 +588,30 @@ function passToTeammate(){
   if(!active||matchEnded)return;
 
   if(ballHolder!==active&&active.group.position.distanceTo(ballPos)>2.8){
-    toast("Je moet dicht bij de bal staan om te passen!");
+    toast("Ga dichter bij de bal staan!");
     return;
   }
 
-  let teammate=null,best=Infinity;
-  const forward=new THREE.Vector3(0,0,-1).applyQuaternion(active.group.quaternion);
-  forward.y=0;
-  forward.normalize();
+  let teammate=null;
+  let best=Infinity;
 
-  for(const p of controllable){
+  for(const p of bluePlayers){
     if(p===active)continue;
-    const offset=p.group.position.clone().sub(active.group.position);
-    const dist=offset.length();
-    if(dist<best&&offset.dot(forward)>-2){
-      best=dist;
+    const d=p.group.position.distanceTo(active.group.position);
+    if(d<best){
+      best=d;
       teammate=p;
     }
   }
 
-  if(!teammate){
-    toast("Geen ploegmaat gevonden!");
-    return;
-  }
+  if(!teammate)return;
 
   ballHolder=null;
-  stealTarget=null;
-  stealTimer=0;
-  ballPos.copy(active.group.position).addScaledVector(forward,1.4);
+  ballPos.copy(active.group.position);
   ballPos.y=R;
 
   const target=teammate.group.position.clone().sub(ballPos);
   target.y=0;
-  if(target.lengthSq()<.01)target.copy(forward);
   target.normalize();
 
   ballVel.copy(target.multiplyScalar(17));
@@ -496,18 +622,20 @@ function passToTeammate(){
 function stopAndReturnToMenu(){
   charging=false;
   $("power").style.display="none";
-  keys[" "]=false;
   resetBall();
   matchEnded=true;
-  $("goal").classList.remove("show");
+  $("goalMessage").classList.remove("show");
   $("play").textContent="START NIEUWE WEDSTRIJD";
   $("menu").style.display="grid";
-  toast("WEDSTRIJD GESTOPT");
 }
 
 window.addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
-  if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault();
+
+  if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
+    e.preventDefault();
+  }
+
   keys[k]=true;
 
   if(k===" "&&!e.repeat){
@@ -516,9 +644,12 @@ window.addEventListener("keydown",e=>{
   }
 
   if(k==="e"&&!e.repeat){
-    selected=(selected+1)%controllable.length;
-    active=controllable[selected];
-    toast("SPELER "+(selected+1)+" GESELECTEERD");
+    active.isUser=false;
+    selected=(selected+1)%bluePlayers.length;
+    active=bluePlayers[selected];
+    bluePlayers.forEach(p=>p.isUser=false);
+    active.isUser=true;
+    toast("JIJ BESTUURT BLAUWE SPELER "+(selected+1));
   }
 
   if(k==="c"&&!e.repeat){
@@ -562,10 +693,6 @@ window.addEventListener("blur",()=>{
   if(charging)releaseShot();
 });
 
-function clamp(v,a,b){
-  return Math.max(a,Math.min(b,v));
-}
-
 function movePlayer(p,dir,dt,speed){
   if(dir.lengthSq()>0){
     dir.normalize();
@@ -579,200 +706,179 @@ function movePlayer(p,dir,dt,speed){
   p.group.position.z=clamp(p.group.position.z,-FIELD_L/2+2,FIELD_L/2-2);
 }
 
-function roleHomePosition(p,team){
-  return new THREE.Vector3(
-    p.homeX??p.group.position.x,
-    0,
-    p.homeZ??p.group.position.z
-  );
-}
-
 function nearestPlayerToBall(players){
-  let best=null,bestDist=Infinity;
+  let best=null;
+  let bestDist=Infinity;
+
   for(const p of players){
-    const d=Math.hypot(
-      p.group.position.x-ballPos.x,
-      p.group.position.z-ballPos.z
-    );
+    if(p.isKeeper)continue;
+    const d=p.group.position.distanceTo(ballPos);
     if(d<bestDist){
-      best=p;
       bestDist=d;
+      best=p;
     }
   }
+
   return {player:best,distance:bestDist};
 }
 
 function stepAI(dt){
-  const blueAI=teammates;
-  const redAI=opponents;
-  const blueNearest=nearestPlayerToBall(blueAI);
-  const redNearest=nearestPlayerToBall(redAI);
-  const ballZ=ballPos.z;
+  const blueNearest=nearestPlayerToBall(bluePlayers);
+  const redNearest=nearestPlayerToBall(redPlayers);
 
-  function runTeam(players,team){
+  function updateTeam(players,team,nearest){
     const ownGoalZ=team==="blue"?FIELD_L/2:-FIELD_L/2;
-    const opponentGoalZ=-ownGoalZ;
-    const nearest=team==="blue"?blueNearest:redNearest;
-    const isOppPossession=ballHolder&&ballHolder.team!==team;
+    const enemyGoalZ=-ownGoalZ;
+    const teamHasBall=ballHolder&&ballHolder.team===team;
+    const enemyHasBall=ballHolder&&ballHolder.team!==team;
 
-    players.forEach((p,i)=>{
-      if(p===active)return;
+    for(const p of players){
+      if(p===active)continue;
 
-      if(ballHolder===p){
-        const goalX=clamp(-p.group.position.x*.18,-GOAL_W*.32,GOAL_W*.32);
-        const target=new THREE.Vector3(
-          goalX,0,opponentGoalZ+(team==="blue"?10:-10)
+      // Keepers stay near their own goal and track the ball.
+      if(p.isKeeper){
+        const targetX=Math.abs(ballPos.z-ownGoalZ)<38
+          ?clamp(ballPos.x,-GOAL_W/2+1.5,GOAL_W/2-1.5)
+          :0;
+
+        p.group.position.x+=clamp(
+          targetX-p.group.position.x,-8*dt,8*dt
         );
-        const dir=target.sub(p.group.position);
 
-        if(dir.length()>1.2)movePlayer(p,dir,dt,PLAYER_SPEED*.88);
+        p.group.position.z+=clamp(
+          ownGoalZ-p.group.position.z,-2*dt,2*dt
+        );
 
-        if(Math.abs(p.group.position.z-opponentGoalZ)<23&&
-           Math.abs(p.group.position.x)<GOAL_W*.9&&
-           performance.now()/1000-lastShot>1.0){
-          lastShot=performance.now()/1000;
-          ballHolder=null;
-          ballPos.set(
-            p.group.position.x,R,
-            p.group.position.z+(team==="blue"?-1.2:1.2)
-          );
-          const aimX=clamp(-p.group.position.x*.12,-3,3);
-          ballVel.set(aimX,5.5,team==="blue"?-27:27);
-          toast(team==="blue"?"BLUE FC SCHIET OP DOEL!":"RED FC SCHIET OP DOEL!");
+        if(!ballHolder&&
+           Math.abs(ballPos.z-ownGoalZ)<5&&
+           Math.abs(ballPos.x-p.group.position.x)<3.4&&
+           ballPos.y<GOAL_H){
+          ballPos.x=p.group.position.x;
+          ballVel.z=team==="blue"?-Math.max(8,Math.abs(ballVel.z)):
+            Math.max(8,Math.abs(ballVel.z));
+          ballVel.x+=(Math.random()-.5)*8;
+          ballVel.y=Math.max(ballVel.y,3);
         }
-        return;
+        continue;
       }
 
-      const home=roleHomePosition(p,team);
-      let target=home.clone();
-      const ballInOwnHalf=team==="blue"?ballZ>0:ballZ<0;
-      const ballCloseToOwnGoal=Math.abs(ballZ-ownGoalZ)<48;
-      const canPress=nearest.player===p;
+      // Elke veldspeler zoekt actief naar een kans om de bal te winnen.
+      const isNearest=nearest.player===p;
+      let target=new THREE.Vector3(p.homeX,0,p.homeZ);
 
-      if(p.role==="aanvaller"){
-        target.z=opponentGoalZ+(team==="blue"?18:-18);
-        target.x=clamp(
-          ballPos.x+(i%2===0?-7:7),
-          -FIELD_W*.32,FIELD_W*.32
-        );
+      if(ballHolder===p){
+        // De AI-speler met de bal probeert richting het vijandelijke doel te scoren.
+        const goalX=clamp(ballPos.x*.12,-GOAL_W*.28,GOAL_W*.28);
+        target.set(goalX,0,enemyGoalZ+(team==="blue"?12:-12));
 
-        if((isOppPossession||!ballHolder)&&
-           (canPress||Math.abs(ballZ-p.group.position.z)<48)&&
-           Math.abs(ballZ-p.group.position.z)<55){
-          target.x=ballPos.x+(i%2===0?-2.5:2.5);
-          target.z=ballPos.z+(team==="blue"?5:-5);
+        const distanceToGoal=Math.abs(p.group.position.z-enemyGoalZ);
+        if(distanceToGoal<38&&performance.now()/1000-lastShot>1.0){
+          lastShot=performance.now()/1000;
+          ballHolder=null;
+
+          const aimX=clamp(-p.group.position.x*.18,-4,4);
+          ballPos.set(p.group.position.x,R,p.group.position.z);
+          ballVel.set(aimX,5.5,team==="blue"?-30:30);
+          toast(team==="blue"?"BLUE FC SCHIET!":"RED FC SCHIET!");
         }
-      }else if(p.role==="middenvelder"){
-        target.x=clamp(
-          home.x+(ballPos.x-home.x)*.28,
-          -FIELD_W*.38,FIELD_W*.38
-        );
-        target.z=home.z+(ballZ-home.z)*.18;
+      }else if(!ballHolder||enemyHasBall||teamHasBall){
+        if(isNearest||enemyHasBall||!ballHolder){
+          // De dichtstbijzijnde spelers jagen op de bal.
+          target.set(
+            ballPos.x,
+            0,
+            ballPos.z+(team==="blue"?2:-2)
+          );
+        }else{
+          // De andere spelers lopen mee naar aanvallende posities.
+          const attackZ=team==="blue"?-1:1;
+          target.x=clamp(ballPos.x*.55+p.homeX*.45,-FIELD_W*.4,FIELD_W*.4);
 
-        if((isOppPossession||!ballHolder)&&canPress&&
-           Math.abs(ballZ-p.group.position.z)<42){
-          target.x=ballPos.x+(p.group.position.x<ballPos.x?-2.5:2.5);
-          target.z=ballPos.z+(team==="blue"?3:-3);
-        }
-      }else{
-        target.x=clamp(home.x+ballPos.x*.12,-FIELD_W*.36,FIELD_W*.36);
-        target.z=ownGoalZ+(team==="blue"?-29:29);
+          if(p.role==="aanvaller"){
+            target.z=enemyGoalZ+(team==="blue"?24:-24);
+          }else if(p.role==="verdediger"){
+            target.z=p.homeZ+(ballPos.z-p.homeZ)*.16;
+          }else{
+            target.z=p.homeZ+(ballPos.z-p.homeZ)*.32;
+          }
 
-        if(ballInOwnHalf&&ballCloseToOwnGoal&&canPress){
-          target.x=ballPos.x+(p.group.position.x<ballPos.x?-3:3);
-          target.z=ballPos.z+(team==="blue"?7:-7);
+          // Aanvallers blijven niet passief staan als de bal dichtbij is.
+          if(p.role==="aanvaller"&&Math.abs(ballPos.z-p.group.position.z)<55){
+            target.x=ballPos.x+(p.homeX<0?-4:4);
+            target.z=ballPos.z+(team==="blue"?-7:7);
+          }
         }
       }
 
       const dir=target.sub(p.group.position);
-      const distance=dir.length();
-      const speed=p.role==="aanvaller"?PLAYER_SPEED*.72:PLAYER_SPEED*.58;
-      if(distance>1.6)movePlayer(p,dir,dt,speed);
+      const dist=dir.length();
+      if(dist>1.4){
+        const speed=p.role==="aanvaller"?PLAYER_SPEED*.9:PLAYER_SPEED*.78;
+        movePlayer(p,dir,dt,speed);
+      }
 
-      if(!ballHolder&&canPress&&
-         p.group.position.distanceTo(ballPos)<1.65&&
-         ballPos.y<2.1&&ballVel.length()<10){
+      // Spelers van beide ploegen kunnen de vrije bal oppikken.
+      if(!ballHolder&&
+         p.group.position.distanceTo(ballPos)<1.8&&
+         ballPos.y<2.4){
         ballHolder=p;
         ballVel.set(0,0,0);
-        toast(team==="blue"?"BLUE FC heeft de bal!":"RED FC heeft de bal!");
       }
-    });
-  }
 
-  runTeam(blueAI,"blue");
-  runTeam(redAI,"red");
+      // AI kan ook de bal afpakken van een tegenstander.
+      if(ballHolder&&ballHolder.team!==team&&
+         p.group.position.distanceTo(ballHolder.group.position)<STEAL_DISTANCE){
+        if(stealTarget===p)stealTimer+=dt;
+        else{
+          stealTarget=p;
+          stealTimer=0;
+        }
 
-  // Keepers volgen de bal en proberen schoten tegen te houden.
-  for(const keeper of keepers){
-    const isBlue=keeper.team==="blue";
-    const goalZ=isBlue?FIELD_L/2-4:-FIELD_L/2+4;
-    const ballNearGoal=Math.abs(ballPos.z-goalZ)<35;
-    const targetX=ballNearGoal
-      ?clamp(ballPos.x,-GOAL_W/2+1.5,GOAL_W/2-1.5)
-      :0;
-
-    keeper.group.position.x+=clamp(
-      targetX-keeper.group.position.x,-8*dt,8*dt
-    );
-    keeper.group.position.z+=clamp(
-      goalZ-keeper.group.position.z,-2*dt,2*dt
-    );
-    keeper.group.position.x=clamp(
-      keeper.group.position.x,-GOAL_W/2+1,GOAL_W/2-1
-    );
-
-    const dx=ballPos.x-keeper.group.position.x;
-    const dz=ballPos.z-keeper.group.position.z;
-
-    if(!ballHolder&&Math.hypot(dx,dz)<2.8&&
-       ballPos.y<GOAL_H&&Math.abs(ballPos.z-goalZ)<4.5){
-      ballPos.x=keeper.group.position.x+Math.sign(dx||1)*1.7;
-      ballPos.z=goalZ+(isBlue?-1.8:1.8);
-      ballVel.z=isBlue
-        ?-Math.max(7,Math.abs(ballVel.z)*.8)
-        :Math.max(7,Math.abs(ballVel.z)*.8);
-      ballVel.x+=dx*1.4;
-      ballVel.y=Math.max(ballVel.y,2.5);
-      toast("KEEPER REDT DE BAL!");
+        if(stealTimer>=STEAL_TIME){
+          ballHolder=p;
+          stealTarget=null;
+          stealTimer=0;
+          ballVel.set(0,0,0);
+          toast(team==="blue"?"BLUE FC PAKT DE BAL!":"RED FC PAKT DE BAL!");
+        }
+      }
     }
   }
+
+  updateTeam(bluePlayers,"blue",blueNearest);
+  updateTeam(redPlayers,"red",redNearest);
 }
 
 function stepBall(dt){
   if(ballHolder){
-    if(controllable.includes(ballHolder)&&ballHolder!==active){
-      active=ballHolder;
-      selected=controllable.indexOf(ballHolder);
-      toast("JIJ BENT NU SPELER "+(selected+1));
-    }
-
+    const holder=ballHolder;
     const forward=new THREE.Vector3(0,0,-1)
-      .applyQuaternion(ballHolder.group.quaternion);
+      .applyQuaternion(holder.group.quaternion);
     forward.y=0;
     if(forward.lengthSq()<.001)forward.set(0,0,-1);
     forward.normalize();
 
-    const holderPos=ballHolder.group.position;
-    const desired=holderPos.clone().addScaledVector(forward,1.05);
+    const desired=holder.group.position.clone()
+      .addScaledVector(forward,1.05);
     desired.y=R;
     ballPos.lerp(desired,Math.min(1,dt*18));
     ballVel.set(0,0,0);
 
-    const holderTeam=ballHolder.team;
-    const challengers=holderTeam==="blue"
-      ?opponents
-      :controllable.filter(p=>p!==ballHolder);
+    // De tegenstander die het dichtstbij is, probeert de bal te winnen.
+    const enemies=holder.team==="blue"?redPlayers:bluePlayers;
+    let challenger=null;
+    let best=Infinity;
 
-    let challenger=null,bestDistance=Infinity;
-    for(const p of challengers){
-      const d=p.group.position.distanceTo(holderPos);
-      if(d<bestDistance){
-        bestDistance=d;
+    for(const p of enemies){
+      if(p.isKeeper)continue;
+      const d=p.group.position.distanceTo(holder.group.position);
+      if(d<best){
+        best=d;
         challenger=p;
       }
     }
 
-    if(challenger&&bestDistance<STEAL_DISTANCE){
+    if(challenger&&best<STEAL_DISTANCE){
       if(stealTarget===challenger)stealTimer+=dt;
       else{
         stealTarget=challenger;
@@ -783,14 +889,7 @@ function stepBall(dt){
         ballHolder=challenger;
         stealTarget=null;
         stealTimer=0;
-
-        if(controllable.includes(challenger)){
-          active=challenger;
-          selected=controllable.indexOf(challenger);
-          toast("BAL AFGEPAKT! JIJ HEBT DE BAL!");
-        }else{
-          toast("TEGENSTANDER PAKT DE BAL AF!");
-        }
+        toast(challenger.team==="blue"?"BLUE PAKT DE BAL!":"RED PAKT DE BAL!");
       }
     }else{
       stealTarget=null;
@@ -798,7 +897,6 @@ function stepBall(dt){
     }
 
     ballGroup.position.copy(ballPos);
-    ballGroup.rotation.x+=.02;
     return;
   }
 
@@ -821,10 +919,12 @@ function stepBall(dt){
     ballVel.x*=-.65;
   }
 
-  if(Math.abs(ballPos.z)>FIELD_L/2+3.5&&
-     Math.abs(ballPos.x)<GOAL_W/2-.25&&
-     ballPos.y<GOAL_H-.15&&
+  // DOELPUNTEN
+  if(Math.abs(ballPos.z)>FIELD_L/2+3&&
+     Math.abs(ballPos.x)<GOAL_W/2&&
+     ballPos.y<GOAL_H&&
      performance.now()/1000-lastGoal>2.5){
+
     lastGoal=performance.now()/1000;
 
     if(ballPos.z<0){
@@ -836,31 +936,33 @@ function stepBall(dt){
       updateScore();
       celebrate("RED");
     }
+
     setTimeout(resetBall,650);
   }else if(Math.abs(ballPos.z)>FIELD_L/2+7){
     ballPos.z=Math.sign(ballPos.z)*(FIELD_L/2+7);
     ballVel.z*=-.5;
   }
 
-  const humanDist=active.group.position.distanceTo(ballPos);
-  if(humanDist<2.15&&ballPos.y<2.2&&ballVel.length()<12){
+  // Een blauwe speler kan de bal opnemen.
+  if(active.group.position.distanceTo(ballPos)<2.0&&
+     ballPos.y<2.2&&ballVel.length()<12){
     ballHolder=active;
     ballVel.set(0,0,0);
-    toast("JIJ HEBT DE BAL!");
   }
 
+  // Botsingen tussen vrije bal en veldspelers.
   if(!ballHolder){
     for(const p of allPlayers){
-      const pp=p.group.position;
-      const dx=ballPos.x-pp.x;
-      const dz=ballPos.z-pp.z;
+      if(p.isKeeper)continue;
+      const dx=ballPos.x-p.group.position.x;
+      const dz=ballPos.z-p.group.position.z;
       const dist=Math.hypot(dx,dz);
 
-      if(dist<1.2&&ballPos.y<2.8){
+      if(dist<1.15&&ballPos.y<2.8){
         const nx=dist>.001?dx/dist:0;
         const nz=dist>.001?dz/dist:1;
-        ballPos.x=pp.x+nx*1.2;
-        ballPos.z=pp.z+nz*1.2;
+        ballPos.x=p.group.position.x+nx*1.15;
+        ballPos.z=p.group.position.z+nz*1.15;
         ballVel.x+=nx*1.1;
         ballVel.z+=nz*1.1;
       }
@@ -872,29 +974,129 @@ function stepBall(dt){
   ballGroup.rotation.z-=ballVel.x*dt/R;
 }
 
+// 2D-MINIMAP RECHTSONDER
+const mapCanvas=$("minimap");
+const mapCtx=mapCanvas.getContext("2d");
+
+function mapX(x){
+  return 8+(x+FIELD_W/2)/FIELD_W*(mapCanvas.width-16);
+}
+
+function mapY(z){
+  return 8+(z+FIELD_L/2)/FIELD_L*(mapCanvas.height-16);
+}
+
+function drawMinimap(){
+  const w=mapCanvas.width;
+  const h=mapCanvas.height;
+  const ctx=mapCtx;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#176c3a";
+  ctx.fillRect(0,0,w,h);
+
+  // Veldstrepen.
+  for(let i=0;i<10;i++){
+    ctx.fillStyle=i%2?"#218047":"#19743d";
+    ctx.fillRect(8,8+i*(h-16)/10,w-16,(h-16)/10);
+  }
+
+  ctx.strokeStyle="rgba(255,255,255,.9)";
+  ctx.lineWidth=1.3;
+  ctx.strokeRect(8,8,w-16,h-16);
+
+  ctx.beginPath();
+  ctx.moveTo(8,h/2);
+  ctx.lineTo(w-8,h/2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(w/2,h/2,12,0,Math.PI*2);
+  ctx.stroke();
+
+  // Strafschopgebieden en doelen.
+  const goalWidth=(GOAL_W/FIELD_W)*(w-16);
+  const boxWidth=(52/FIELD_W)*(w-16);
+  const boxHeight=(24/FIELD_L)*(h-16);
+
+  ctx.strokeRect(w/2-boxWidth/2,8,boxWidth,boxHeight);
+  ctx.strokeRect(w/2-boxWidth/2,h-8-boxHeight,boxWidth,boxHeight);
+
+  ctx.fillStyle="#ffffff";
+  ctx.fillRect(w/2-goalWidth/2,3,goalWidth,5);
+  ctx.fillRect(w/2-goalWidth/2,h-8,goalWidth,5);
+
+  function dot(x,y,color,r){
+    ctx.beginPath();
+    ctx.fillStyle=color;
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // Rode spelers.
+  for(const p of redPlayers){
+    if(p.isKeeper){
+      dot(mapX(p.group.position.x),mapY(p.group.position.z),"#ffdf45",4.2);
+    }else{
+      dot(mapX(p.group.position.x),mapY(p.group.position.z),"#f13f4e",3.5);
+    }
+  }
+
+  // Blauwe spelers; jouw speler heeft een extra witte rand.
+  for(const p of bluePlayers){
+    const x=mapX(p.group.position.x);
+    const y=mapY(p.group.position.z);
+
+    if(p.isKeeper){
+      dot(x,y,"#ffdf45",4.2);
+    }else{
+      dot(x,y,"#26b9ed",3.5);
+    }
+
+    if(p===active){
+      ctx.beginPath();
+      ctx.strokeStyle="#83ffc1";
+      ctx.lineWidth=2.5;
+      ctx.arc(x,y,6.5,0,Math.PI*2);
+      ctx.stroke();
+    }
+  }
+
+  // De bal is een wit punt met zwarte rand.
+  const bx=mapX(ballPos.x);
+  const by=mapY(ballPos.z);
+  ctx.beginPath();
+  ctx.fillStyle="#ffffff";
+  ctx.strokeStyle="#111111";
+  ctx.lineWidth=1.5;
+  ctx.arc(bx,by,4,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+}
+
 function updateMatchClock(){
   const elapsedMinutes=Math.min(
-    MATCH_MINUTES,Math.floor(matchSeconds/SECONDS_PER_GAME_MINUTE)
+    MATCH_MINUTES,
+    Math.floor(matchSeconds/SECONDS_PER_GAME_MINUTE)
   );
-  const mm=String(elapsedMinutes).padStart(2,"0");
-  const ss=String(
-    Math.floor(
-      (matchSeconds%SECONDS_PER_GAME_MINUTE)/
-      SECONDS_PER_GAME_MINUTE*60
-    )
-  ).padStart(2,"0");
 
-  $("matchClock").textContent=mm+":"+ss+" / 90:00";
+  const seconds=Math.floor(
+    (matchSeconds%SECONDS_PER_GAME_MINUTE)/
+    SECONDS_PER_GAME_MINUTE*60
+  );
+
+  $("matchClock").textContent=
+    String(elapsedMinutes).padStart(2,"0")+":"+
+    String(seconds).padStart(2,"0")+" / 90:00";
 }
 
 function endMatch(){
   matchEnded=true;
   charging=false;
   $("power").style.display="none";
-  $("goal").classList.remove("show");
-  $("goal").innerHTML="WEDSTRIJD AFGELOPEN";
-  $("goal").classList.add("show");
-  toast("EINDE WEDSTRIJD · EINDSTAND "+scoreRed+" - "+scoreBlue);
+  $("goalMessage").innerHTML="WEDSTRIJD<br>AFGELOPEN";
+  $("goalMessage").classList.add("show");
+  toast("EINDSTAND "+scoreRed+" - "+scoreBlue);
   $("play").textContent="SPEEL OPNIEUW";
   $("menu").style.display="grid";
 }
@@ -903,10 +1105,12 @@ let previous=performance.now();
 
 function animate(now){
   requestAnimationFrame(animate);
+
   const dt=Math.min(.033,(now-previous)/1000);
   previous=now;
 
   if(matchEnded){
+    drawMinimap();
     renderer.render(scene,camera);
     return;
   }
@@ -924,11 +1128,12 @@ function animate(now){
 
   if(goalPause>0){
     goalPause=Math.max(0,goalPause-dt);
-    updateMatchClock();
+    drawMinimap();
     renderer.render(scene,camera);
     return;
   }
 
+  // Besturing van jouw geselecteerde blauwe speler.
   const dir=new THREE.Vector3(
     ((keys.d||keys.arrowright)?1:0)-((keys.a||keys.arrowleft)?1:0),
     0,
@@ -937,8 +1142,13 @@ function animate(now){
 
   movePlayer(active,dir,dt,PLAYER_SPEED);
 
+  // Animatie van armen en benen.
   allPlayers.forEach((p,i)=>{
-    const moving=p===active?dir.lengthSq()>.01:i<teammates.length+1;
+    const moving=p===active
+      ?dir.lengthSq()>.01
+      :Math.hypot(ballVel.x,ballVel.z)>.5||
+       p.group.position.distanceTo(ballPos)>2;
+
     const swing=moving?Math.sin(now*.012+i)*.45:0;
     p.legs[0].rotation.x=swing;
     p.legs[1].rotation.x=-swing;
@@ -956,24 +1166,31 @@ function animate(now){
     if(power>=1)releaseShot();
   }
 
+  // Camera.
   const pp=active.group.position;
   let camPos,look;
 
   if(cameraMode==="broadcast"){
-    camPos=new THREE.Vector3(ballPos.x+12,27,ballPos.z+39);
+    camPos=new THREE.Vector3(ballPos.x+12,29,ballPos.z+39);
     look=new THREE.Vector3(ballPos.x,0,ballPos.z-4);
   }else{
     const forward=new THREE.Vector3(0,0,1)
       .applyQuaternion(active.group.quaternion);
-    camPos=pp.clone().add(new THREE.Vector3(0,8,0))
+
+    camPos=pp.clone()
+      .add(new THREE.Vector3(0,8,0))
       .addScaledVector(forward,15);
-    look=pp.clone().add(new THREE.Vector3(0,2,0))
+
+    look=pp.clone()
+      .add(new THREE.Vector3(0,2,0))
       .addScaledVector(forward,-4);
   }
 
   const alpha=1-Math.exp(-3.5*dt);
   camera.position.lerp(camPos,alpha);
   camera.lookAt(look);
+
+  drawMinimap();
   renderer.render(scene,camera);
 }
 
@@ -986,7 +1203,7 @@ $("play").addEventListener("click",()=>{
     updateScore();
     updateMatchClock();
     resetBall();
-    $("goal").classList.remove("show");
+    $("goalMessage").classList.remove("show");
     $("play").textContent="START WEDSTRIJD";
   }
 
@@ -1003,9 +1220,11 @@ window.addEventListener("resize",()=>{
 
 resetBall();
 updateMatchClock();
-camera.position.set(12,27,39);
+camera.position.set(12,29,39);
 camera.lookAt(0,0,0);
+drawMinimap();
 requestAnimationFrame(animate);
+
 })();
 </script>
 </body>
