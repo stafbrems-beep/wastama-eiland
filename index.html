@@ -3,60 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Launcher</title>
+    <title>Game Arcade Launcher</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #1a1a2e;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
             color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
+            overflow: hidden;
         }
 
+        /* Subtiel geanimeerde titel */
         h1 {
-            margin-bottom: 30px;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
+            text-align: center;
+            animation: pulseGlow 3s infinite alternate;
         }
 
-        .button-container {
+        @keyframes pulseGlow {
+            0% { text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
+            100% { text-shadow: 0 0 25px rgba(0, 242, 254, 0.9); }
+        }
+
+        .game-grid {
             display: flex;
-            gap: 20px;
+            gap: 30px;
             flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+            padding: 20px;
         }
 
-        .game-btn {
-            display: inline-block;
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #0f3460;
-            border: 2px solid #e94560;
-            border-radius: 8px;
+        /* Stijlvolle Game Cards */
+        .game-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px 25px;
+            width: 280px;
+            text-align: center;
             text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        .game-btn:hover {
-            background-color: #e94560;
-            transform: scale(1.05);
+        /* Hover effect op de kaarten */
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .card-wastama:hover {
+            border-color: #ff416c;
+            box-shadow: 0 15px 35px rgba(255, 65, 108, 0.4);
+        }
+
+        .card-space:hover {
+            border-color: #4facfe;
+            box-shadow: 0 15px 35px rgba(79, 172, 254, 0.4);
+        }
+
+        .game-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .game-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        /* Coole actie-knop in de kaart */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s;
+        }
+
+        .btn-wastama {
+            background: linear-gradient(45deg, #ff4b1f, #ff416c);
+        }
+
+        .btn-space {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
         }
     </style>
 </head>
 <body>
 
-    <h1>Welke game wil je spelen?</h1>
+    <h1>🎮 Welke game wil je spelen?</h1>
 
-    <div class="button-container">
-        <!-- Knop 1: Wastama Eiland -->
-        <a href="https://stafbrems-beep.github.io/wastama-eiland/" class="game-btn">Wastama Eiland</a>
-        
-        <!-- Knop 2: Space Portal Runner -->
-        <a href="Space%20Portal%20Runner%20(1).html" class="game-btn">Space Portal Runner</a>
+    <div class="game-grid">
+        <!-- Card 1: Wastama Eiland -->
+        <a href="https://stafbrems-beep.github.io/wastama-eiland/" class="game-card card-wastama">
+            <span class="game-icon">🏝️</span>
+            <span class="game-title">Wastama Eiland</span>
+            <span class="btn btn-wastama">Speel Nu</span>
+        </a>
+
+        <!-- Card 2: Space Portal Runner -->
+        <a href="Space%20Portal%20Runner%20(1).html" class="game-card card-space">
+            <span class="game-icon">🚀</span>
+            <span class="game-title">Space Portal Runner</span>
+            <span class="btn btn-space">Speel Nu</span>
+        </a>
     </div>
 
 </body>
