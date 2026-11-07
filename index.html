@@ -13,33 +13,36 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            /* 🌌 NIEUWE ACHTERGROND: Dieppaars naar donkerblauw met een sci-fi verloop */
+            background: linear-gradient(to bottom, #090514, #0a0f24, #020308);
             color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow: hidden; /* Zorgt ervoor dat ze ook buiten de browser verdwijnen zonder scrollbalken */
+            overflow: hidden;
             position: relative;
         }
 
-        /* Coole geanimeerde arcade-achtergrond */
+        /* 🎆 NIEUW ACHTERGROND EFFECT: Een bewegende retro cyber-grid vloer/matrix */
         body::before {
             content: '';
             position: absolute;
-            width: 200%;
-            height: 200%;
-            background-image: radial-gradient(#ffffff 1px, transparent 1px);
-            background-size: 50px 50px;
-            opacity: 0.1;
-            animation: stars 100s linear infinite;
+            inset: 0;
+            background: 
+                linear-gradient(rgba(0, 242, 254, 0.05) 1px, transparent 1px) 0 0 / 40px 40px,
+                linear-gradient(90deg, rgba(255, 65, 108, 0.05) 1px, transparent 1px) 0 0 / 40px 40px;
+            transform: perspective(500px) rotateX(60deg) translateY(-30%);
+            transform-origin: top center;
+            animation: gridMove 20s linear infinite;
             z-index: 0;
+            opacity: 0.7;
         }
 
-        @keyframes stars {
-            from { transform: translate(0, 0); }
-            to { transform: translate(-50px, -50px); }
+        @keyframes gridMove {
+            from { background-position: 0 0; }
+            to { background-position: 0 100%; }
         }
 
         h1 {
@@ -72,9 +75,9 @@
         }
 
         .game-card {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 10, 25, 0.7);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.05);
             border-radius: 24px;
             padding: 40px 30px;
             width: 280px;
@@ -82,10 +85,9 @@
             text-decoration: none;
             color: white;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
             cursor: pointer;
             position: relative;
-            /* overflow: hidden; IS HIER VERWIJDERD zodat de iconen buiten de kaart kunnen vliegen! */
         }
 
         /* Glanzend highlight effect op de kaarten */
@@ -96,7 +98,7 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03), transparent);
             transform: rotate(45deg);
             transition: 0.6s;
             pointer-events: none;
@@ -108,28 +110,28 @@
 
         .game-card:hover {
             transform: translateY(-15px);
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 20, 40, 0.85);
         }
 
         /* Wastama Eiland Styling */
-        .card-wastama { border-color: rgba(255, 65, 108, 0.3); }
+        .card-wastama { border-color: rgba(255, 65, 108, 0.2); }
         .card-wastama:hover {
             border-color: #ff416c;
-            box-shadow: 0 0 30px rgba(255, 65, 108, 0.6), inset 0 0 15px rgba(255, 65, 108, 0.2);
+            box-shadow: 0 0 35px rgba(255, 65, 108, 0.5), inset 0 0 15px rgba(255, 65, 108, 0.1);
         }
 
         /* Space Portal Runner Styling */
-        .card-space { border-color: rgba(79, 172, 254, 0.3); }
+        .card-space { border-color: rgba(79, 172, 254, 0.2); }
         .card-space:hover {
             border-color: #00f2fe;
-            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 35px rgba(0, 242, 254, 0.5), inset 0 0 15px rgba(0, 242, 254, 0.1);
         }
 
         /* Voetbal Mini Cup Styling */
-        .card-football { border-color: rgba(57, 255, 20, 0.3); }
+        .card-football { border-color: rgba(57, 255, 20, 0.2); }
         .card-football:hover {
             border-color: #39ff14;
-            box-shadow: 0 0 30px rgba(57, 255, 20, 0.6), inset 0 0 15px rgba(57, 255, 20, 0.2);
+            box-shadow: 0 0 35px rgba(57, 255, 20, 0.5), inset 0 0 15px rgba(57, 255, 20, 0.1);
         }
 
         /* Icon algemene styling */
@@ -137,55 +139,54 @@
             font-size: 65px;
             margin-bottom: 20px;
             display: block;
-            /* Zorgt voor een vloeiende overgang terug naar de startpositie */
-            transition: transform 0.5s ease, opacity 0.3s ease; 
+            transition: transform 0.8s ease, opacity 0.4s ease; 
             position: relative;
             z-index: 5;
         }
 
-        /* 🚀 Trage Raket Animatie (Vliegt heel rustig schuin omhoog uit het scherm) */
+        /* 🚀 EXTREEM TRAGE Raket Animatie (15 seconden!) */
         @keyframes rocketFlyAway {
             0% {
                 transform: translate(0, 0) scale(1) rotate(0deg);
                 opacity: 1;
             }
-            80% {
-                transform: translate(100vw, -100vh) scale(1.5) rotate(15deg);
+            90% {
+                transform: translate(110vw, -110vh) scale(1.6) rotate(20deg);
                 opacity: 1;
             }
             100% {
-                transform: translate(100vw, -100vh) scale(1.5) rotate(15deg);
+                transform: translate(110vw, -110vh) scale(1.6) rotate(20deg);
                 opacity: 0;
             }
         }
 
         .card-space:hover .game-icon {
-            /* 4 seconden geanimeerd (veeeel trager) */
-            animation: rocketFlyAway 4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            /* Staat nu op 15s (extreem traag) */
+            animation: rocketFlyAway 15s linear forwards;
         }
 
-        /* ⚽ Trage Voetbal Animatie (Vliegt rollend/draaiend heel rustig uit het scherm) */
+        /* ⚽ EXTREEM TRAGE Voetbal Animatie (15 seconden!) */
         @keyframes footballRollAway {
             0% {
                 transform: translate(0, 0) scale(1) rotate(0deg);
                 opacity: 1;
             }
-            80% {
-                transform: translate(100vw, -80vh) scale(0.5) rotate(720deg);
+            90% {
+                transform: translate(110vw, -90vh) scale(0.6) rotate(1080deg);
                 opacity: 1;
             }
             100% {
-                transform: translate(100vw, -80vh) scale(0.5) rotate(720deg);
+                transform: translate(110vw, -90vh) scale(0.6) rotate(1080deg);
                 opacity: 0;
             }
         }
 
         .card-football:hover .game-icon {
-            /* 4 seconden geanimeerd (veeeel trager) */
-            animation: footballRollAway 4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            /* Staat nu op 15s (extreem traag) */
+            animation: footballRollAway 15s linear forwards;
         }
 
-        /* Algemene hover effect voor overige iconen */
+        /* Normale hover voor kaarten zonder vlieg-effect */
         .game-card:not(.card-space):not(.card-football):hover .game-icon {
             transform: scale(1.15) rotate(5deg);
         }
@@ -310,3 +311,4 @@
         </a>
     </div>
 
+    <!-- 🚨 Pop-up Venster -->
