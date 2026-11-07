@@ -255,4 +255,19 @@
             document.getElementById('defectModal').classList.add('active');
         }
 
-        // Functie om de pop-up te sl
+        // Functie om de pop-up te sluiten
+        function closeDefectModal() {
+            document.getElementById('defectModal').classList.remove('active');
+        }
+
+        // Sluit ook als je buiten het pop-up venster klikt
+        window.onclick = function(event) {
+            const modal = document.getElementById('defectModal');
+            if (event.target == modal) {
+                modal.classList.remove('active');
+            }
+        }
+    </script>
+
+</body>
+</html>
