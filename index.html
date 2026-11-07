@@ -140,9 +140,8 @@
             font-size: 1.6rem; 
             font-weight: 800; 
             margin-bottom: 25px; 
-            display: block;
             letter-spacing: 1px;
-            min-height: 76px; /* Zorgt dat de kaarten even hoog blijven */
+            min-height: 76px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -234,6 +233,16 @@
             color: #0f172a;
             border: none;
             cursor: pointer;
+            display: inline-block;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 100%;
         }
         .btn-close:hover {
             background: #f1f5f9;
@@ -253,7 +262,7 @@
         </div>
 
         <!-- Knop 2: Space Portal Runner -->
-        <a href="https://stafbrems-beep.github.io/space-portal-runner/" class="game-card card-space">
+        <a href="https://github.io" class="game-card card-space">
             <span class="game-icon">🚀</span>
             <span class="game-title">Space Portal Runner</span>
             <span class="btn btn-space">Speel Nu</span>
@@ -280,7 +289,7 @@
     <div id="countdownModal" class="modal-overlay">
         <div class="modal-box modal-countdown">
             <h2>Even geduld! ⏳</h2>
-            <p>De game <strong>Voetbal Mini Cup</strong> is momenteel in actieve ontwikkeling en komt officieel uit op <strong>12 december</strong>!</p>
+            <p>De game <strong>Voetbal Mini Cup</strong> is momenteel in actieve ontwikkeling en komt officieel uit op <strong>20 november</strong>!</p>
             <button onclick="closeCountdownModal()" class="btn btn-close">Sluiten</button>
         </div>
     </div>
@@ -294,9 +303,3 @@
             document.getElementById('defectModal').classList.remove('active');
         }
 
-        // Functies voor Voetbal Mini Cup Pop-up
-        function showCountdownModal() {
-            document.getElementById('countdownModal').classList.add('active');
-        }
-        function closeCountdownModal() {
-            document.getElementById('countdownModal').classList.remove('active');
