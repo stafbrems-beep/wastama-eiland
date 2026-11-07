@@ -66,7 +66,7 @@
             gap: 30px;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 1100px; /* Verbreed zodat 3 kaarten mooi naast elkaar passen */
+            max-width: 1100px;
             padding: 20px;
             z-index: 1;
         }
@@ -124,14 +124,14 @@
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
-        /* NIEUW: Voetbal Mini Cup Styling (Neon Groen) */
+        /* Voetbal Mini Cup Styling (Neon Groen) */
         .card-football { border-color: rgba(57, 255, 20, 0.3); }
         .card-football:hover {
             border-color: #39ff14;
             box-shadow: 0 0 30px rgba(57, 255, 20, 0.6), inset 0 0 15px rgba(57, 255, 20, 0.2);
         }
 
-        /* Icon animaties */
+        /* Icon algemene styling */
         .game-icon {
             font-size: 65px;
             margin-bottom: 20px;
@@ -143,15 +143,26 @@
             transform: scale(1.15) rotate(5deg);
         }
 
-        /* Extra vliegende animatie specifiek voor de voetbal */
-        @keyframes footballShoot {
-            0% { transform: scale(1.15) translate(0, 0) rotate(0deg); }
-            50% { transform: scale(1.25) translate(10px, -10px) rotate(180deg); }
-            100% { transform: scale(1.15) translate(0, 0) rotate(360deg); }
+        /* ⚽ NIEUWE HIER: Harde schot-animatie volledig uit de kaart (tot over de rand) */
+        @keyframes footballShotAway {
+            0% {
+                transform: scale(1) translate(0, 0) rotate(0deg);
+                opacity: 1;
+            }
+            30% {
+                transform: scale(0.4) translate(250px, -250px) rotate(360deg);
+                opacity: 0;
+            }
+            /* Blijft onzichtbaar buiten het scherm totdat je je muis weghaalt */
+            100% {
+                transform: scale(0.4) translate(250px, -250px) rotate(360deg);
+                opacity: 0;
+            }
         }
 
+        /* Activeert de schot-animatie één keer (forwards) bij hover */
         .card-football:hover .game-icon {
-            animation: footballShoot 0.8s ease-in-out infinite;
+            animation: footballShotAway 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
         .game-title {
@@ -260,14 +271,14 @@
         </div>
 
         <!-- Knop 2: Space Portal Runner -->
-        <a href="https://stafbrems-beep.github.io/space-portal-runner/" class="game-card card-space">
+        <a href="https://github.io" class="game-card card-space">
             <span class="game-icon">🚀</span>
             <span class="game-title">Space Portal Runner</span>
             <span class="btn btn-space">Speel Nu</span>
         </a>
 
-        <!-- NIEUW Knop 3: Voetbal Mini Cup -->
-        <a href="https://stafbrems-beep.github.io/voetbal-mini-cup/" class="game-card card-football">
+        <!-- Knop 3: Voetbal Mini Cup -->
+        <a href="https://github.io" class="game-card card-football">
             <span class="game-icon">⚽</span>
             <span class="game-title">Voetbal Mini Cup</span>
             <span class="btn btn-football">Speel Nu</span>
@@ -284,17 +295,14 @@
     </div>
 
     <script>
-        // Functie om de pop-up te tonen
         function showDefectModal() {
             document.getElementById('defectModal').classList.add('active');
         }
 
-        // Functie om de pop-up te sluiten
         function closeDefectModal() {
             document.getElementById('defectModal').classList.remove('active');
         }
 
-        // Sluit ook als je buiten het pop-up venster klikt
         window.onclick = function(event) {
             const modal = document.getElementById('defectModal');
             if (event.target == modal) {
