@@ -20,7 +20,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden; /* Zorgt ervoor dat ze ook buiten de browser verdwijnen zonder scrollbalken */
             position: relative;
         }
 
@@ -85,7 +85,7 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             position: relative;
-            overflow: hidden;
+            /* overflow: hidden; IS HIER VERWIJDERD zodat de iconen buiten de kaart kunnen vliegen! */
         }
 
         /* Glanzend highlight effect op de kaarten */
@@ -99,6 +99,7 @@
             background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
             transform: rotate(45deg);
             transition: 0.6s;
+            pointer-events: none;
         }
 
         .game-card:hover::after {
@@ -110,21 +111,21 @@
             background: rgba(15, 23, 42, 0.8);
         }
 
-        /* Wastama Eiland Styling (Neon Rood/Oranje) */
+        /* Wastama Eiland Styling */
         .card-wastama { border-color: rgba(255, 65, 108, 0.3); }
         .card-wastama:hover {
             border-color: #ff416c;
             box-shadow: 0 0 30px rgba(255, 65, 108, 0.6), inset 0 0 15px rgba(255, 65, 108, 0.2);
         }
 
-        /* Space Portal Runner Styling (Neon Blauw) */
+        /* Space Portal Runner Styling */
         .card-space { border-color: rgba(79, 172, 254, 0.3); }
         .card-space:hover {
             border-color: #00f2fe;
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
-        /* Voetbal Mini Cup Styling (Neon Groen) */
+        /* Voetbal Mini Cup Styling */
         .card-football { border-color: rgba(57, 255, 20, 0.3); }
         .card-football:hover {
             border-color: #39ff14;
@@ -136,33 +137,57 @@
             font-size: 65px;
             margin-bottom: 20px;
             display: block;
-            transition: transform 0.3s ease;
+            /* Zorgt voor een vloeiende overgang terug naar de startpositie */
+            transition: transform 0.5s ease, opacity 0.3s ease; 
+            position: relative;
+            z-index: 5;
         }
 
-        .game-card:hover .game-icon {
-            transform: scale(1.15) rotate(5deg);
-        }
-
-        /* ⚽ NIEUWE HIER: Harde schot-animatie volledig uit de kaart (tot over de rand) */
-        @keyframes footballShotAway {
+        /* 🚀 Trage Raket Animatie (Vliegt heel rustig schuin omhoog uit het scherm) */
+        @keyframes rocketFlyAway {
             0% {
-                transform: scale(1) translate(0, 0) rotate(0deg);
+                transform: translate(0, 0) scale(1) rotate(0deg);
                 opacity: 1;
             }
-            30% {
-                transform: scale(0.4) translate(250px, -250px) rotate(360deg);
-                opacity: 0;
+            80% {
+                transform: translate(100vw, -100vh) scale(1.5) rotate(15deg);
+                opacity: 1;
             }
-            /* Blijft onzichtbaar buiten het scherm totdat je je muis weghaalt */
             100% {
-                transform: scale(0.4) translate(250px, -250px) rotate(360deg);
+                transform: translate(100vw, -100vh) scale(1.5) rotate(15deg);
                 opacity: 0;
             }
         }
 
-        /* Activeert de schot-animatie één keer (forwards) bij hover */
+        .card-space:hover .game-icon {
+            /* 4 seconden geanimeerd (veeeel trager) */
+            animation: rocketFlyAway 4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* ⚽ Trage Voetbal Animatie (Vliegt rollend/draaiend heel rustig uit het scherm) */
+        @keyframes footballRollAway {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            80% {
+                transform: translate(100vw, -80vh) scale(0.5) rotate(720deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(100vw, -80vh) scale(0.5) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
         .card-football:hover .game-icon {
-            animation: footballShotAway 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            /* 4 seconden geanimeerd (veeeel trager) */
+            animation: footballRollAway 4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* Algemene hover effect voor overige iconen */
+        .game-card:not(.card-space):not(.card-football):hover .game-icon {
+            transform: scale(1.15) rotate(5deg);
         }
 
         .game-title {
@@ -263,7 +288,7 @@
     <h1>🎮 Welke game wil je spelen?</h1>
 
     <div class="game-grid">
-        <!-- Knop 1: Wastama Eiland (Triggert pop-up via JavaScript) -->
+        <!-- Knop 1: Wastama Eiland -->
         <div onclick="showDefectModal()" class="game-card card-wastama">
             <span class="game-icon">🏝️</span>
             <span class="game-title">Wastama Eiland</span>
@@ -285,30 +310,3 @@
         </a>
     </div>
 
-    <!-- 🚨 Pop-up Venster -->
-    <div id="defectModal" class="modal-overlay">
-        <div class="modal-box">
-            <h2>Oeps! ⚠️</h2>
-            <p>De game <strong>Wastama Eiland</strong> is momenteel defect en kan niet worden gespeeld. Er wordt aan gewerkt!</p>
-            <button onclick="closeDefectModal()" class="btn btn-close">Sluiten</button>
-        </div>
-    </div>
-
-    <script>
-        function showDefectModal() {
-            document.getElementById('defectModal').classList.add('active');
-        }
-
-        function closeDefectModal() {
-            document.getElementById('defectModal').classList.remove('active');
-        }
-
-        window.onclick = function(event) {
-            const modal = document.getElementById('defectModal');
-            if (event.target == modal) {
-                modal.classList.remove('active');
-            }
-        }
-    </script>
-</body>
-</html>
