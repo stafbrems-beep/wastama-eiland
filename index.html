@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Arcade Launcher</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
@@ -20,7 +15,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden;
             position: relative;
         }
 
@@ -63,10 +58,10 @@
 
         .game-grid {
             display: flex;
-            gap: 30px;
+            gap: 40px;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 1100px; /* Verbreed zodat 3 kaarten mooi naast elkaar passen */
+            max-width: 900px;
             padding: 20px;
             z-index: 1;
         }
@@ -77,7 +72,7 @@
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             padding: 40px 30px;
-            width: 280px;
+            width: 300px;
             text-align: center;
             text-decoration: none;
             color: white;
@@ -112,51 +107,32 @@
 
         /* Wastama Eiland Styling (Neon Rood/Oranje) */
         .card-wastama { border-color: rgba(255, 65, 108, 0.3); }
-        .card-wastama:hover {
-            border-color: #ff416c;
-            box-shadow: 0 0 30px rgba(255, 65, 108, 0.6), inset 0 0 15px rgba(255, 65, 108, 0.2);
+        .card-wastama:hover { 
+            border-color: #ff416c; 
+            box-shadow: 0 0 30px rgba(255, 65, 108, 0.6), inset 0 0 15px rgba(255, 65, 108, 0.2); 
         }
 
         /* Space Portal Runner Styling (Neon Blauw) */
         .card-space { border-color: rgba(79, 172, 254, 0.3); }
-        .card-space:hover {
-            border-color: #00f2fe;
-            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.2);
+        .card-space:hover { 
+            border-color: #00f2fe; 
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.2); 
         }
 
-        /* NIEUW: Voetbal Mini Cup Styling (Neon Groen) */
-        .card-football { border-color: rgba(57, 255, 20, 0.3); }
-        .card-football:hover {
-            border-color: #39ff14;
-            box-shadow: 0 0 30px rgba(57, 255, 20, 0.6), inset 0 0 15px rgba(57, 255, 20, 0.2);
-        }
-
-        /* Icon animaties */
-        .game-icon {
-            font-size: 65px;
-            margin-bottom: 20px;
+        .game-icon { 
+            font-size: 65px; 
+            margin-bottom: 20px; 
             display: block;
             transition: transform 0.3s ease;
         }
-
         .game-card:hover .game-icon {
             transform: scale(1.15) rotate(5deg);
         }
 
-        /* GECORRIGEERD: Alleen nog maar draaien op de eigen positie */
-        @keyframes footballShoot {
-            0% { transform: scale(1.15) rotate(0deg); }
-            100% { transform: scale(1.15) rotate(360deg); }
-        }
-
-        .card-football:hover .game-icon {
-            animation: footballShoot 1.2s linear infinite; /* Lineair gemaakt voor een vloeiende rotatie */
-        }
-
-        .game-title {
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin-bottom: 25px;
+        .game-title { 
+            font-size: 1.6rem; 
+            font-weight: 800; 
+            margin-bottom: 25px; 
             display: block;
             letter-spacing: 1px;
         }
@@ -176,7 +152,6 @@
 
         .btn-wastama { background: linear-gradient(45deg, #ff4b1f, #ff416c); color: white; }
         .btn-space { background: linear-gradient(45deg, #00f2fe, #4facfe); color: #020617; }
-        .btn-football { background: linear-gradient(45deg, #11998e, #38ef7d); color: #020617; }
 
         .game-card:hover .btn {
             transform: scale(1.05);
@@ -240,7 +215,6 @@
             border: none;
             cursor: pointer;
         }
-
         .btn-close:hover {
             background: #f1f5f9;
         }
@@ -251,44 +225,47 @@
     <h1>🎮 Welke game wil je spelen?</h1>
 
     <div class="game-grid">
-        <!-- Knop 1: Wastama Eiland -->
+        <!-- Knop 1: Wastama Eiland (Triggert nu de pop-up via JavaScript) -->
         <div onclick="showDefectModal()" class="game-card card-wastama">
             <span class="game-icon">🏝️</span>
             <span class="game-title">Wastama Eiland</span>
             <span class="btn btn-wastama">Speel Nu</span>
         </div>
 
-        <!-- Knop 2: Space Portal Runner -->
-        <a href="https://github.io" class="game-card card-space">
+        <!-- Knop 2: Space Portal Runner (Nu correct gekoppeld naar je nieuwe site) -->
+        <a href="https://stafbrems-beep.github.io/space-portal-runner/" class="game-card card-space">
             <span class="game-icon">🚀</span>
-            <span class="game-title">Space Portal</span>
+            <span class="game-title">Space Portal Runner</span>
             <span class="btn btn-space">Speel Nu</span>
         </a>
-
-        <!-- Knop 3: Voetbal Mini Cup -->
-        <div class="game-card card-football">
-            <span class="game-icon">⚽</span>
-            <span class="game-title">Voetbal Cup</span>
-            <span class="btn btn-football">Speel Nu</span>
-        </div>
     </div>
 
-    <!-- Defect Modal Pop-up -->
+    <!-- 🚨 Pop-up Venster -->
     <div id="defectModal" class="modal-overlay">
         <div class="modal-box">
-            <h2>⚠️ Defect!</h2>
-            <p>Wastama Eiland is momenteel wegens onderhoud tijdelijk niet beschikbaar. Probeer een van de andere games!</p>
+            <h2>Oeps! ⚠️</h2>
+            <p>De game <strong>Wastama Eiland</strong> is momenteel deffect en kan niet worden gespeeld. Er wordt aan gewerkt!</p>
             <button onclick="closeDefectModal()" class="btn btn-close">Sluiten</button>
         </div>
     </div>
 
     <script>
+        // Functie om de pop-up te tonen
         function showDefectModal() {
             document.getElementById('defectModal').classList.add('active');
         }
 
+        // Functie om de pop-up te sluiten
         function closeDefectModal() {
             document.getElementById('defectModal').classList.remove('active');
+        }
+
+        // Sluit ook als je buiten het pop-up venster klikt
+        window.onclick = function(event) {
+            const modal = document.getElementById('defectModal');
+            if (event.target == modal) {
+                modal.classList.remove('active');
+            }
         }
     </script>
 
