@@ -20,7 +20,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
             position: relative;
         }
 
@@ -66,7 +66,7 @@
             gap: 30px;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 1100px;
+            max-width: 1100px; /* Verbreed zodat 3 kaarten mooi naast elkaar passen */
             padding: 20px;
             z-index: 1;
         }
@@ -85,6 +85,7 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
             cursor: pointer;
             position: relative;
+            overflow: hidden;
         }
 
         /* Glanzend highlight effect op de kaarten */
@@ -98,7 +99,6 @@
             background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
             transform: rotate(45deg);
             transition: 0.6s;
-            pointer-events: none;
         }
 
         .game-card:hover::after {
@@ -110,70 +110,47 @@
             background: rgba(15, 23, 42, 0.8);
         }
 
-        /* Wastama Eiland Styling */
+        /* Wastama Eiland Styling (Neon Rood/Oranje) */
         .card-wastama { border-color: rgba(255, 65, 108, 0.3); }
         .card-wastama:hover {
             border-color: #ff416c;
             box-shadow: 0 0 30px rgba(255, 65, 108, 0.6), inset 0 0 15px rgba(255, 65, 108, 0.2);
         }
 
-        /* Space Portal Runner Styling */
+        /* Space Portal Runner Styling (Neon Blauw) */
         .card-space { border-color: rgba(79, 172, 254, 0.3); }
         .card-space:hover {
             border-color: #00f2fe;
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
-        /* Voetbal Mini Cup Styling */
+        /* NIEUW: Voetbal Mini Cup Styling (Neon Groen) */
         .card-football { border-color: rgba(57, 255, 20, 0.3); }
         .card-football:hover {
             border-color: #39ff14;
             box-shadow: 0 0 30px rgba(57, 255, 20, 0.6), inset 0 0 15px rgba(57, 255, 20, 0.2);
         }
 
-        /* Icon basistransities */
+        /* Icon animaties */
         .game-icon {
             font-size: 65px;
             margin-bottom: 20px;
             display: block;
-            transition: transform 0.5s ease, opacity 0.3s ease;
-            position: relative;
-            z-index: 5;
+            transition: transform 0.3s ease;
         }
 
-        /* 🚀 ANIMATIE RAKET: Schiet in 4s over het hele scherm heen weg */
-        @keyframes rocketFlyAway {
-            0% {
-                transform: translate(0, 0) scale(1) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(120vw, -120vh) scale(1.6) rotate(20deg);
-                opacity: 0;
-            }
+        .game-card:hover .game-icon {
+            transform: scale(1.15) rotate(5deg);
         }
 
-        .card-space:hover .game-icon {
-            animation: rocketFlyAway 4s linear forwards;
-        }
-
-        /* ⚽ NIEUWE ANIMATIE VOETBAL: Blijft op zijn plek en draait alleen soepel rond */
-        @keyframes footballSpin {
-            0% {
-                transform: scale(1.15) rotate(0deg);
-            }
-            100% {
-                transform: scale(1.15) rotate(360deg);
-            }
+        /* GECORRIGEERD: Alleen nog maar draaien op de eigen positie */
+        @keyframes footballShoot {
+            0% { transform: scale(1.15) rotate(0deg); }
+            100% { transform: scale(1.15) rotate(360deg); }
         }
 
         .card-football:hover .game-icon {
-            animation: footballSpin 2s linear infinite;
-        }
-
-        /* Normale hover voor kaarten zonder speciale animatie (zoals Wastama) */
-        .game-card:not(.card-space):not(.card-football):hover .game-icon {
-            transform: scale(1.15) rotate(5deg);
+            animation: footballShoot 1.2s linear infinite; /* Lineair gemaakt voor een vloeiende rotatie */
         }
 
         .game-title {
@@ -284,23 +261,23 @@
         <!-- Knop 2: Space Portal Runner -->
         <a href="https://github.io" class="game-card card-space">
             <span class="game-icon">🚀</span>
-            <span class="game-title">Space Portal Runner</span>
+            <span class="game-title">Space Portal</span>
             <span class="btn btn-space">Speel Nu</span>
         </a>
 
         <!-- Knop 3: Voetbal Mini Cup -->
-        <a href="https://github.io" class="game-card card-football">
+        <div class="game-card card-football">
             <span class="game-icon">⚽</span>
-            <span class="game-title">Voetbal Mini Cup</span>
+            <span class="game-title">Voetbal Cup</span>
             <span class="btn btn-football">Speel Nu</span>
-        </a>
+        </div>
     </div>
 
-    <!-- 🚨 Pop-up Venster -->
+    <!-- Defect Modal Pop-up -->
     <div id="defectModal" class="modal-overlay">
         <div class="modal-box">
-            <h2>Oeps! ⚠️</h2>
-            <p>De game <strong>Wastama Eiland</strong> is momenteel defect en kan niet worden gespeeld. Er wordt aan gewerkt!</p>
+            <h2>⚠️ Defect!</h2>
+            <p>Wastama Eiland is momenteel wegens onderhoud tijdelijk niet beschikbaar. Probeer een van de andere games!</p>
             <button onclick="closeDefectModal()" class="btn btn-close">Sluiten</button>
         </div>
     </div>
@@ -313,7 +290,7 @@
         function closeDefectModal() {
             document.getElementById('defectModal').classList.remove('active');
         }
+    </script>
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('defectModal');
-            if (event.target == modal) {
+</body>
+</html>
